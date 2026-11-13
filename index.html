@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f7f6f3">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="四级1500">
+<title>四级 1500 词 · 背词本</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#f7f6f3; --card:#ffffff; --line:#e8e6e1; --line2:#d9d6cf;
+  --tx:#1d1d1f; --tx2:#6b6a66; --tx3:#9c9a94;
+  --blue:#3b6ef2; --green:#12946a; --amber:#c98a00; --red:#d64545;
+  --hdr:rgba(247,246,243,.92); --nav:rgba(255,255,255,.94);
+  --track:#eceae5; --dot:#e0ded8;
+  --tagbg:#eef1fb; --tagtx:#3b5bd0;
+  --okbg:#f0faf6; --okbd:#bfe3d4; --oktx:#0d7a56;
+  --badbg:#fdf3f3; --badbd:#f0c9c9; --badtx:#b33;
+  --midbd:#eddcb4; --midtx:#9a6a00;
+  --toastbg:#1d1d1f; --toasttx:#ffffff;
+  --r:14px;
+}
+html[data-theme="dark"]{
+  --bg:#151517; --card:#1d1d20; --line:#2b2b30; --line2:#3a3a41;
+  --tx:#f0efec; --tx2:#a5a39d; --tx3:#7b7973;
+  --blue:#5b86f7; --green:#3fbf94; --amber:#e0b04a; --red:#f0736f;
+  --hdr:rgba(21,21,23,.92); --nav:rgba(29,29,32,.95);
+  --track:#2a2a2f; --dot:#33333a;
+  --tagbg:#232a3d; --tagtx:#9db4f5;
+  --okbg:#14261f; --okbd:#2c5c47; --oktx:#63d6a8;
+  --badbg:#2a1a1a; --badbd:#5e3030; --badtx:#f08a86;
+  --midbd:#4a3a1a; --midtx:#d9a53c;
+  --toastbg:#f0efec; --toasttx:#151517;
+}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--tx);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased;font-size:15px;line-height:1.5}
+body{padding-bottom:calc(66px + env(safe-area-inset-bottom))}
+.wrap{max-width:560px;margin:0 auto;padding:0 16px}
+button{font-family:inherit;font-size:15px;cursor:pointer;border:none;background:none;color:inherit}
+input{font-family:inherit}
+
+header{position:sticky;top:0;z-index:20;background:var(--hdr);
+  backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:10px 0 9px}
+.hrow{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.htitle{font-size:15px;font-weight:600;letter-spacing:.3px}
+.hsub{font-size:12px;color:var(--tx3);margin-top:1px}
+.hprog{width:64px;height:64px;position:relative;flex:none}
+.hprog svg{transform:rotate(-90deg)}
+.hprog circle{stroke:var(--track)}
+.hprog circle#hRing{stroke:var(--blue);transition:stroke-dashoffset .3s}
+.hprog b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:600;color:var(--blue)}
+
+.view{display:none;padding-top:16px}
+.view.on{display:block;animation:fade .22s ease both}
+#v-study.on{display:flex;flex-direction:column;justify-content:center;min-height:calc(100vh - 190px)}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+.empty{text-align:center;padding:44px 20px;color:var(--tx2);font-size:14px}
+.empty .big{font-size:34px;margin-bottom:10px;opacity:.35}
+.btn{display:block;width:100%;text-align:center;padding:14px;border-radius:12px;
+  background:var(--blue);color:#fff;font-weight:600;font-size:15px}
+.btn.ghost{background:transparent;color:var(--tx);border:1px solid var(--line2)}
+.btn:active{opacity:.85}
+
+.cardwrap{perspective:1200px;margin-top:6px}
+.wordcard{position:relative;width:100%;min-height:330px;border-radius:18px;
+  transform-style:preserve-3d;transition:transform .42s cubic-bezier(.3,.8,.3,1);cursor:pointer}
+.wordcard.flip{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  background:var(--card);border:1px solid var(--line);border-radius:18px;
+  display:flex;flex-direction:column;padding:22px 20px}
+.face.back{transform:rotateY(180deg);overflow:auto}
+.face.back .binner{flex:1;display:flex;flex-direction:column;justify-content:center}
+.fmeta{display:flex;justify-content:space-between;font-size:12px;color:var(--tx3)}
+.ftag{background:var(--tagbg);color:var(--tagtx);padding:2px 8px;border-radius:20px;font-size:11px}
+.fcenter{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.bigword{font-size:34px;font-weight:600;letter-spacing:.4px;word-break:break-word;padding:0 4px}
+.ipa{font-size:15px;color:var(--tx2);margin-top:8px;font-family:"Segoe UI",sans-serif}
+.hint{font-size:12px;color:var(--tx3);margin-top:20px}
+.spk{width:44px;height:44px;border-radius:50%;border:1px solid var(--line2);display:flex;
+  align-items:center;justify-content:center;margin-top:16px}
+.spk svg{width:19px;height:19px;stroke:var(--tx2);fill:none;stroke-width:1.7}
+.backword{font-size:15px;color:var(--tx3);font-weight:500}
+.backdef{font-size:20px;font-weight:600;line-height:1.55;margin-top:8px}
+.relbox{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.reltitle{font-size:11px;color:var(--tx3);letter-spacing:.5px;margin-bottom:8px}
+.relrow{font-size:14px;color:var(--tx2);line-height:1.75;margin-bottom:2px}
+.relrow b{color:var(--tx);font-weight:500}
+
+.rate{display:flex;gap:8px;margin-top:14px}
+.rate button{flex:1;padding:13px 4px;border-radius:12px;border:1px solid var(--line2);
+  font-size:14px;font-weight:500;background:var(--card);transition:transform .1s}
+.rate button:active{transform:scale(.97)}
+.rate .no{color:var(--badtx); border-color:var(--badbd)}
+.rate .mid{color:var(--midtx); border-color:var(--midbd)}
+.rate .yes{color:var(--oktx); border-color:var(--okbd)}
+.rate .k{display:block;font-size:10px;color:var(--tx3);font-weight:400;margin-top:1px}
+.rate[hidden]{display:none}
+
+.bar{height:4px;background:var(--track);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--blue);border-radius:3px;transition:width .3s}
+
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{padding:6px 12px;border-radius:20px;border:1px solid var(--line);
+  font-size:13px;color:var(--tx2);white-space:nowrap;background:var(--card)}
+.tabs button.on{background:var(--tx);color:#fff;border-color:var(--tx)}
+
+.row{display:flex;align-items:center;gap:10px;padding:13px 14px;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:none}
+.row .w{font-size:15px;font-weight:500}
+.row .d{font-size:12px;color:var(--tx2);margin-top:2px;
+  overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
+.dot{width:7px;height:7px;border-radius:50%;flex:none;background:var(--dot)}
+.dot.s1{background:#f0b429}.dot.s2{background:#7fb2f0}.dot.s3{background:var(--green)}
+.grow{flex:1;min-width:0}
+
+.search{width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--line);
+  background:var(--card);font-size:14px;margin-bottom:12px;outline:none}
+.search:focus{border-color:var(--line2)}
+
+.stat{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat .box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.stat .lb{font-size:12px;color:var(--tx2)}
+.stat .num{font-size:24px;font-weight:600;margin-top:2px}
+.stat .num small{font-size:13px;font-weight:400;color:var(--tx3)}
+
+.sec{margin-top:20px}
+.sech{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.sech h3{font-size:14px;margin:0;font-weight:600}
+.sech span{font-size:12px;color:var(--tx3)}
+
+.setrow{display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:14px;border-bottom:1px solid var(--line)}
+.setrow:last-child{border-bottom:none}
+.setrow .lab{font-size:14px}
+.setrow .sub{font-size:12px;color:var(--tx3);margin-top:2px}
+input[type=range]{width:120px;accent-color:var(--blue)}
+.sw{width:46px;height:27px;border-radius:20px;background:#dedbd4;position:relative;transition:.2s;flex:none}
+.sw.on{background:var(--green)}
+.sw i{position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;background:#fff;transition:.2s}
+.sw.on i{left:22px}
+
+nav{position:fixed;bottom:0;left:0;right:0;z-index:30;background:var(--nav);
+  backdrop-filter:blur(14px);border-top:1px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom)}
+nav .in{max-width:560px;margin:0 auto;display:flex}
+nav button{flex:1;padding:9px 0 8px;display:flex;flex-direction:column;align-items:center;gap:3px;
+  font-size:11px;color:var(--tx3)}
+nav button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6;
+  stroke-linecap:round;stroke-linejoin:round}
+nav button.on{color:var(--tx)}
+
+.toast{position:fixed;left:50%;bottom:96px;transform:translate(-50%,10px);background:var(--toastbg);
+  color:var(--toasttx);font-size:13px;padding:9px 16px;border-radius:20px;opacity:0;pointer-events:none;
+  transition:.25s;z-index:50;white-space:nowrap}
+.toast.on{opacity:.94;transform:translate(-50%,0)}
+
+.quizq{text-align:center;padding:26px 10px 18px}
+.quizq .q{font-size:28px;font-weight:600;word-break:break-word}
+.quizq .qi{font-size:14px;color:var(--tx2);margin-top:6px}
+.opts{display:flex;flex-direction:column;gap:9px;margin-top:6px}
+.opts button{text-align:left;padding:14px;border:1px solid var(--line);border-radius:12px;
+  background:var(--card);font-size:14px;line-height:1.45}
+.opts button.ok{border-color:var(--okbd);background:var(--okbg);color:var(--oktx)}
+.opts button.bad{border-color:var(--badbd);background:var(--badbg);color:var(--badtx)}
+.opts button:disabled{cursor:default}
+
+.spell{width:100%;padding:14px;font-size:22px;letter-spacing:2px;text-align:center;
+  border:1px solid var(--line2);border-radius:12px;background:var(--card);outline:none}
+.spell:focus{border-color:var(--blue)}
+.spellhint{text-align:center;font-size:15px;color:var(--tx3);letter-spacing:4px;margin:14px 0}
+
+.seg{display:flex;gap:6px}
+.seg button{padding:6px 10px;border-radius:8px;border:1px solid var(--line);font-size:12px;color:var(--tx2);background:var(--card)}
+.seg button.on{background:var(--tx);color:var(--bg);border-color:var(--tx)}
+
+.forecast{display:flex;gap:6px;align-items:flex-end;height:96px;padding:6px 2px 0}
+.forecast .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end}
+.forecast .cnum{font-size:11px;color:var(--tx2)}
+.forecast .cbar{width:100%;max-width:26px;background:var(--blue);border-radius:4px;min-height:3px;opacity:.85}
+.forecast .cbar.zero{background:var(--track)}
+.forecast .clab{font-size:11px;color:var(--tx3)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap hrow">
+    <div>
+      <div class="htitle" id="hTitle">背词</div>
+      <div class="hsub" id="hSub">今日 0 / 60</div>
+    </div>
+    <div class="hprog">
+      <svg width="64" height="64">
+        <circle cx="32" cy="32" r="27" stroke="#eceae5" stroke-width="5" fill="none"/>
+        <circle id="hRing" cx="32" cy="32" r="27" stroke="#3b6ef2" stroke-width="5" fill="none"
+          stroke-linecap="round" stroke-dasharray="169.6" stroke-dashoffset="169.6"/>
+      </svg>
+      <b id="hPct">0%</b>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="view on" id="v-study">
+    <div id="studyBody"></div>
+  </section>
+
+  <section class="view" id="v-quiz">
+    <div id="quizBody"></div>
+  </section>
+
+  <section class="view" id="v-lib">
+    <input class="search" id="search" placeholder="搜索单词或中文释义">
+    <div class="tabs" id="secTabs"></div>
+    <div class="tabs" id="listTabs"></div>
+    <div class="card" id="libList"></div>
+  </section>
+
+  <section class="view" id="v-me">
+    <div id="meBody"></div>
+  </section>
+
+</main>
+
+<nav>
+  <div class="in">
+    <button class="on" data-v="study">
+      <svg viewBox="0 0 24 24"><rect x="3" y="5" width="14" height="15" rx="2"/><path d="M7 3h12a2 2 0 0 1 2 2v13"/><path d="M7 10h6M7 14h4"/></svg>
+      <span>背词</span>
+    </button>
+    <button data-v="quiz">
+      <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <span>测练</span>
+    </button>
+    <button data-v="lib">
+      <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      <span>词库</span>
+    </button>
+    <button data-v="me">
+      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>我的</span>
+    </button>
+  </div>
+</nav>
+
+<div class="toast" id="toast"></div>
+<input type="file" id="impFile" accept=".json,application/json" style="display:none" onchange="onImpFile(this)">
+
+<script>
+var WORDS = [{"i":1,"s":"高频","l":1,"w":"peril","p":"ˈperəl","d":"n. 严重危险","r":[]},{"i":2,"s":"高频","l":1,"w":"experienced","p":"ɪkˈspɪəriənst","d":"a. 有经验的；熟练的","r":[]},{"i":3,"s":"高频","l":1,"w":"confess","p":"kənˈfes","d":"v. 承认；坦白","r":[]},{"i":4,"s":"高频","l":1,"w":"murder","p":"ˈmɜːdə(r)","d":"n. & v. 谋杀","r":[]},{"i":5,"s":"高频","l":1,"w":"mortgage","p":"ˈmɔːɡɪdʒ","d":"n. 按揭贷款","r":[]},{"i":6,"s":"高频","l":1,"w":"cite","p":"saɪt","d":"v. 引用；列举","r":[]},{"i":7,"s":"高频","l":1,"w":"account","p":"əˈkaʊnt","d":"n. 账户；描述 v. 认为是","r":[["accountable","əˈkaʊntəbl","a. 负责任的"],["discount","ˈdɪskaʊnt","n. 折扣"]]},{"i":8,"s":"高频","l":1,"w":"charge","p":"tʃɑːdʒ","d":"n. 收费；控告；掌管；电荷 v. 收费；控诉；充电","r":[]},{"i":9,"s":"高频","l":1,"w":"organism","p":"ˈɔːɡənɪzəm","d":"n. 有机体；生物体","r":[]},{"i":10,"s":"高频","l":1,"w":"journalism","p":"ˈdʒɜːnəlɪzəm","d":"n. 新闻业","r":[["journal","ˈdʒɜːnl","n. 杂志；期刊；日记"]]},{"i":11,"s":"高频","l":1,"w":"capital","p":"ˈkæpɪtl","d":"n. 资本；首都；大写字母","r":[]},{"i":12,"s":"高频","l":1,"w":"credit","p":"ˈkredɪt","d":"n. 信用；信用贷款","r":[["incredible","ɪnˈkredəbl","a. 难以置信的；极好的"]]},{"i":13,"s":"高频","l":1,"w":"civil","p":"ˈsɪvl","d":"a. 公民的；民事的","r":[["citizen","ˈsɪtɪzn","n. 市民"],["civilization","ˌsɪvəlaɪˈzeɪʃn","n. 文明；开化"]]},{"i":14,"s":"高频","l":1,"w":"campaign","p":"kæmˈpeɪn","d":"n. 活动；战役","r":[]},{"i":15,"s":"高频","l":1,"w":"campus","p":"ˈkæmpəs","d":"n. 校园","r":[]},{"i":16,"s":"高频","l":1,"w":"barrier","p":"ˈbæriə(r)","d":"n. 屏障；障碍","r":[]},{"i":17,"s":"高频","l":1,"w":"squeeze","p":"skwiːz","d":"v. 挤；压","r":[]},{"i":18,"s":"高频","l":1,"w":"aptitude","p":"ˈæptɪtjuːd","d":"n. 能力；天赋","r":[]},{"i":19,"s":"高频","l":1,"w":"adapt","p":"əˈdæpt","d":"v. 改编；适应","r":[]},{"i":20,"s":"高频","l":1,"w":"phase","p":"feɪz","d":"n. 阶段；时期","r":[]},{"i":21,"s":"高频","l":1,"w":"cabinet","p":"ˈkæbɪnət","d":"n. 橱柜；内阁","r":[]},{"i":22,"s":"高频","l":1,"w":"blanket","p":"ˈblæŋkɪt","d":"n. 毛毯 a. 总括的","r":[]},{"i":23,"s":"高频","l":1,"w":"bundle","p":"ˈbʌndl","d":"n. 捆；一批","r":[]},{"i":24,"s":"高频","l":1,"w":"sparkle","p":"ˈspɑːkl","d":"n. 光；活力； vi. 闪耀","r":[]},{"i":25,"s":"高频","l":1,"w":"startle","p":"ˈstɑːtl","d":"vt. 使惊吓","r":[]},{"i":26,"s":"高频","l":1,"w":"packet","p":"ˈpækɪt","d":"n. 小包","r":[]},{"i":27,"s":"高频","l":1,"w":"scenery","p":"ˈsiːnəri","d":"n. 风景；舞台布景","r":[]},{"i":28,"s":"高频","l":1,"w":"anchor","p":"ˈæŋkə(r)","d":"n. 锚 v. 抛锚","r":[]},{"i":29,"s":"高频","l":1,"w":"custom","p":"ˈkʌstəm","d":"n. 风俗；习惯","r":[]},{"i":30,"s":"高频","l":1,"w":"counter","p":"ˈkaʊntə(r)","d":"n. 柜台；对立面 a. 相反的 v. 反对","r":[]},{"i":31,"s":"高频","l":2,"w":"shelter","p":"ˈʃeltə(r)","d":"n. 隐蔽处 v. 遮挡；保护","r":[]},{"i":32,"s":"高频","l":2,"w":"hinder","p":"ˈhɪndə(r)","d":"vt. 妨碍；阻碍","r":[]},{"i":33,"s":"高频","l":2,"w":"contend","p":"kənˈtend","d":"v. 声称；主张；竞争","r":[]},{"i":34,"s":"高频","l":2,"w":"content","p":"ˈkɒntent","d":"n. 内容；目录 [kənˈtent] a. 满意的 v. 使满意","r":[]},{"i":35,"s":"高频","l":2,"w":"imply","p":"ɪmˈplaɪ","d":"v. 暗示；说明","r":[["implicit","ɪmˈplɪsɪt","a. 含蓄的；隐含的"],["implication","ˌɪmplɪˈkeɪʃn","n. 可能的影响；暗指；牵涉"]]},{"i":36,"s":"高频","l":2,"w":"flexible","p":"ˈfleksəbl","d":"a. 灵活的","r":[]},{"i":37,"s":"高频","l":2,"w":"debate","p":"dɪˈbeɪt","d":"n & v. 讨论；辩论","r":[]},{"i":38,"s":"高频","l":2,"w":"declare","p":"dɪˈkleə(r)","d":"v. 声明；宣告","r":[]},{"i":39,"s":"高频","l":2,"w":"detail","p":"ˈdiːteɪl","d":"n. 细节；详情","r":[]},{"i":40,"s":"高频","l":2,"w":"determine","p":"dɪˈtɜːmɪn","d":"v. 决定；决心","r":[]},{"i":41,"s":"高频","l":2,"w":"devote","p":"dɪˈvəʊt","d":"vt. 奉献；专用于","r":[["devotion","dɪˈvəʊʃn","n. 奉献；忠诚"]]},{"i":42,"s":"高频","l":2,"w":"decline","p":"dɪˈklaɪn","d":"v. & n. 减少；下落","r":[]},{"i":43,"s":"高频","l":2,"w":"medium","p":"ˈmiːdiəm","d":"n. 媒介； a. 中等的","r":[["immediate","ɪˈmiːdiət","a. 立即的；目前的"],["intermediate","ˌɪntəˈmiːdiət","a. 中间的；中级的"]]},{"i":44,"s":"高频","l":2,"w":"command","p":"kəˈmɑːnd","d":"vt. 要求","r":[]},{"i":45,"s":"高频","l":2,"w":"recommend","p":"ˌrekəˈmend","d":"vt. 推荐；劝告","r":[]},{"i":46,"s":"高频","l":2,"w":"minister","p":"ˈmɪnɪstə(r)","d":"n. 部长；大臣","r":[]},{"i":47,"s":"高频","l":2,"w":"minor","p":"ˈmaɪnə(r)","d":"a. 较小的；次要的","r":[]},{"i":48,"s":"高频","l":2,"w":"complex","p":"ˈkɒmpleks","d":"a. 复杂的","r":[]},{"i":49,"s":"高频","l":2,"w":"prominent","p":"ˈprɒmɪnənt","d":"a. 突出的；杰出的","r":[]},{"i":50,"s":"高频","l":2,"w":"edition","p":"ɪˈdɪʃn","d":"n. 版本","r":[["editor","ˈedɪtə(r)","n. 编辑；编者"]]},{"i":51,"s":"高频","l":2,"w":"radical","p":"ˈrædɪkl","d":"a. 激进的；根本的 n. 激进分子","r":[]},{"i":52,"s":"高频","l":2,"w":"ample","p":"ˈæmpl","d":"a. 充足的；足够的","r":[]},{"i":53,"s":"高频","l":2,"w":"voyage","p":"ˈvɔɪɪdʒ","d":"vi. & n. 航行；航海","r":[]},{"i":54,"s":"高频","l":2,"w":"bonus","p":"ˈbəʊnəs","d":"n. 奖金；红利","r":[]},{"i":55,"s":"高频","l":2,"w":"migrate","p":"maɪˈɡreɪt","d":"v. 迁徙；移居","r":[["migrant","ˈmaɪɡrənt","n. 候鸟；移居者"]]},{"i":56,"s":"高频","l":2,"w":"obese","p":"əʊˈbiːs","d":"a. 肥胖的；病态肥胖的","r":[]},{"i":57,"s":"高频","l":2,"w":"bid","p":"bɪd","d":"v. & n. 出价；投标；努力争取","r":[]},{"i":58,"s":"高频","l":2,"w":"glory","p":"ˈɡlɔːri","d":"n. 荣誉；光荣；荣耀","r":[]},{"i":59,"s":"高频","l":2,"w":"judgement","p":"ˈdʒʌdʒmənt","d":"(亦作 judgment) n. 判断；审判；意见","r":[]},{"i":60,"s":"高频","l":2,"w":"liquid","p":"ˈlɪkwɪd","d":"n. 液体 a. 液体的","r":[]},{"i":61,"s":"高频","l":3,"w":"diminish","p":"dɪˈmɪnɪʃ","d":"v. 减少；降低","r":[]},{"i":62,"s":"高频","l":3,"w":"delete","p":"dɪˈliːt","d":"vt. 删除","r":[]},{"i":63,"s":"高频","l":3,"w":"delighted","p":"dɪˈlaɪtɪd","d":"a. 高兴的；快乐的","r":[]},{"i":64,"s":"高频","l":3,"w":"deny","p":"dɪˈnaɪ","d":"vt. 否定；否认；拒绝","r":[]},{"i":65,"s":"高频","l":3,"w":"department","p":"dɪˈpɑːtmənt","d":"n. 部门；部；司","r":[]},{"i":66,"s":"高频","l":3,"w":"deposit","p":"dɪˈpɒzɪt","d":"v. 储存；放置 n. 订金；存","r":[]},{"i":67,"s":"高频","l":3,"w":"despite","p":"dɪˈspaɪt","d":"prep. 尽管；不管","r":[]},{"i":68,"s":"高频","l":3,"w":"domestic","p":"dəˈmestɪk","d":"a. 国内的；家庭的；驯养的","r":[]},{"i":69,"s":"高频","l":3,"w":"partial","p":"ˈpɑːʃl","d":"a. 部分的；偏袒的","r":[]},{"i":70,"s":"高频","l":3,"w":"depart","p":"dɪˈpɑːt","d":"v. 离开；出发；启程；离职","r":[["departure","dɪˈpɑːtʃə(r)","n. 离开；启程"]]},{"i":71,"s":"高频","l":3,"w":"derive","p":"dɪˈraɪv","d":"vi. 起源 ；获得","r":[]},{"i":72,"s":"高频","l":3,"w":"deprive","p":"dɪˈpraɪv","d":"v. 剥夺；使丧失","r":[]},{"i":73,"s":"高频","l":3,"w":"particle","p":"ˈpɑːtɪkl","d":"n. 粒子；微粒","r":[]},{"i":74,"s":"高频","l":3,"w":"particularly","p":"pəˈtɪkjələli","d":"ad. 特别地；尤其；格外","r":[]},{"i":75,"s":"高频","l":3,"w":"circuit","p":"ˈsɜːkɪt","d":"n. 环行；巡回；电路","r":[]},{"i":76,"s":"高频","l":3,"w":"circular","p":"ˈsɜːkjələ(r)","d":"a. 圆的；环形的；循环的","r":[]},{"i":77,"s":"高频","l":3,"w":"circulate","p":"ˈsɜːkjəleɪt","d":"v. (使) 循环 vi. 流传","r":[]},{"i":78,"s":"高频","l":3,"w":"extend","p":"ɪkˈstend","d":"v. 延长；扩大","r":[["extension","ɪkˈstenʃn","n. 扩大；延伸"],["extensive","ɪkˈstensɪv","a. 广阔的；广泛的"]]},{"i":79,"s":"高频","l":3,"w":"comparative","p":"kəmˈpærətɪv","d":"a. 比较的；相对的","r":[]},{"i":80,"s":"高频","l":3,"w":"appear","p":"əˈpɪə(r)","d":"v. 出现","r":[["appearance","əˈpɪərəns","n. 外貌；到来"]]},{"i":81,"s":"高频","l":3,"w":"parade","p":"pəˈreɪd","d":"n. 游行；检阅 vi. 游行","r":[]},{"i":82,"s":"高频","l":3,"w":"separate","p":"ˈsepərət","d":"a. 单独的；分开的；不同的 v. (使) 分离","r":[]},{"i":83,"s":"高频","l":3,"w":"parallel","p":"ˈpærəlel","d":"a. 平行的；类似的","r":[]},{"i":84,"s":"高频","l":3,"w":"rhythm","p":"ˈrɪðəm","d":"n. 节奏；韵律","r":[]},{"i":85,"s":"高频","l":3,"w":"drawback","p":"ˈdrɔːbæk","d":"n. 缺点；缺陷；不利条件","r":[]},{"i":86,"s":"高频","l":3,"w":"graceful","p":"ˈɡreɪsfl","d":"a. 优美的；优雅的；得体的","r":[]},{"i":87,"s":"高频","l":3,"w":"gratitude","p":"ˈɡrætɪtjuːd","d":"n. 感谢；感激","r":[]},{"i":88,"s":"高频","l":3,"w":"peculiar","p":"pɪˈkjuːliə(r)","d":"a. 奇怪的；特殊的","r":[]},{"i":89,"s":"高频","l":3,"w":"guidance","p":"ˈɡaɪdns","d":"n. 指导；引导","r":[]},{"i":90,"s":"高频","l":3,"w":"significance","p":"sɪɡˈnɪfɪkəns","d":"n. 意义；重要性","r":[["significance","sɪɡˈnɪfɪkəns","n. 重要性"]]},{"i":91,"s":"高频","l":4,"w":"tolerate","p":"ˈtɒləreɪt","d":"vt. 忍受；容忍；宽恕","r":[["tolerance","ˈtɒlərəns","n. 忍受；宽容；耐性"],["tolerant","ˈtɒlərənt","a. 容忍的；宽容的"]]},{"i":92,"s":"高频","l":4,"w":"assistance","p":"əˈsɪstəns","d":"n. 协助；援助","r":[]},{"i":93,"s":"高频","l":4,"w":"prohibit","p":"prəˈhɪbɪt","d":"vt. 禁止；阻止","r":[]},{"i":94,"s":"高频","l":4,"w":"prompt","p":"prɒmpt","d":"a. 迅速的；立刻的 v. 敦促；激起","r":[]},{"i":95,"s":"高频","l":4,"w":"propose","p":"prəˈpəʊz","d":"vt. 提议 v. 求婚","r":[]},{"i":96,"s":"高频","l":4,"w":"protest","p":"ˈprəʊtest","d":"v. & n. 抗议","r":[]},{"i":97,"s":"高频","l":4,"w":"provided","p":"prəˈvaɪdɪd","d":"conj. 以……为条件；假如","r":[]},{"i":98,"s":"高频","l":4,"w":"provision","p":"prəˈvɪʒn","d":"n. 预备；供应；规定；条款","r":[]},{"i":99,"s":"高频","l":4,"w":"proclaim","p":"prəˈkleɪm","d":"vt. 宣布；表明","r":[]},{"i":100,"s":"高频","l":4,"w":"provoke","p":"prəˈvəʊk","d":"vt. 激怒；引起","r":[]},{"i":101,"s":"高频","l":4,"w":"purchase","p":"ˈpɜːtʃəs","d":"vt. & n. 购买","r":[]},{"i":102,"s":"高频","l":4,"w":"pursue","p":"pəˈsjuː","d":"vt. 追求；追赶","r":[["pursuit","pəˈsjuːt","n. 追赶；追求；爱好"]]},{"i":103,"s":"高频","l":4,"w":"defeat","p":"dɪˈfiːt","d":"vt. 战胜；击败 n. 失败","r":[]},{"i":104,"s":"高频","l":4,"w":"deceive","p":"dɪˈsiːv","d":"vt. 欺骗；辜负","r":[]},{"i":105,"s":"高频","l":4,"w":"defy","p":"dɪˈfaɪ","d":"vt. 反抗；使不能","r":[]},{"i":106,"s":"高频","l":4,"w":"anxious","p":"ˈæŋkʃəs","d":"a. 焦虑的；渴望的","r":[]},{"i":107,"s":"高频","l":4,"w":"harmony","p":"ˈhɑːməni","d":"n. 融洽；和谐","r":[["harmonious","hɑːˈməʊniəs","a. 和谐的；协调的"]]},{"i":108,"s":"高频","l":4,"w":"infect","p":"ɪnˈfekt","d":"v. 传染","r":[["infectious","ɪnˈfekʃəs","a. 传染的；有感染力的"]]},{"i":109,"s":"高频","l":4,"w":"spacious","p":"ˈspeɪʃəs","d":"a. 宽敞的；广阔的","r":[]},{"i":110,"s":"高频","l":4,"w":"conscientious","p":"ˌkɒnʃiˈenʃəs","d":"a. 勤勉认真的；一丝不苟的","r":[]},{"i":111,"s":"高频","l":4,"w":"prosperous","p":"ˈprɒspərəs","d":"a. 繁荣的","r":[["prosperity","prɒˈsperəti","n. 繁荣；昌盛；兴旺"]]},{"i":112,"s":"高频","l":4,"w":"ambitious","p":"æmˈbɪʃəs","d":"a. 有雄心壮志的","r":[]},{"i":113,"s":"高频","l":4,"w":"obvious","p":"ˈɒbviəs","d":"a. 明显的；显而易见的","r":[]},{"i":114,"s":"高频","l":4,"w":"tedious","p":"ˈtiːdiəs","d":"a. 冗长乏味的；沉闷的","r":[]},{"i":115,"s":"高频","l":4,"w":"conscious","p":"ˈkɒnʃəs","d":"a. 意识到的；有意的；刻意的","r":[["consciousness","ˈkɒnʃəsnəs","n. 意识；观念"]]},{"i":116,"s":"高频","l":4,"w":"despair","p":"dɪˈspeə(r)","d":"n. & v. 绝望","r":[]},{"i":117,"s":"高频","l":4,"w":"detective","p":"dɪˈtektɪv","d":"n. 侦探 a. 侦探的","r":[["detect","dɪˈtekt","v. 发现；查明"]]},{"i":118,"s":"高频","l":4,"w":"decay","p":"dɪˈkeɪ","d":"n. & v. 衰退；腐烂；腐朽","r":[]},{"i":119,"s":"高频","l":4,"w":"tremendous","p":"trəˈmendəs","d":"a. 巨大的；极大的","r":[]},{"i":120,"s":"高频","l":4,"w":"marvelous","p":"ˈmɑːvələs","d":"a. 让人惊讶的；极好的","r":[]},{"i":121,"s":"高频","l":5,"w":"jealous","p":"ˈdʒeləs","d":"a. 妒忌的","r":[]},{"i":122,"s":"高频","l":5,"w":"numerous","p":"ˈnjuːmərəs","d":"a. 为数众多的；许多的","r":[]},{"i":123,"s":"高频","l":5,"w":"poison","p":"ˈpɔɪzn","d":"n. 毒药","r":[["poisonous","ˈpɔɪzənəs","a. 有毒的；有害的"]]},{"i":124,"s":"高频","l":5,"w":"demonstrate","p":"ˈdemənstreɪt","d":"v. 证明；证实","r":[]},{"i":125,"s":"高频","l":5,"w":"deputy","p":"ˈdepjuti","d":"n. 副手；代理","r":[]},{"i":126,"s":"高频","l":5,"w":"continuous","p":"kənˈtɪnjuəs","d":"a. 连续不断的；持续的","r":[]},{"i":127,"s":"高频","l":5,"w":"enormous","p":"ɪˈnɔːməs","d":"a. 巨大的；庞大的","r":[]},{"i":128,"s":"高频","l":5,"w":"authority","p":"ɔːˈθɒrəti","d":"n. 权力；权威","r":[]},{"i":129,"s":"高频","l":5,"w":"aware","p":"əˈweə(r)","d":"a. 意识到的；知道的","r":[]},{"i":130,"s":"高频","l":5,"w":"ashamed","p":"əˈʃeɪmd","d":"a. 羞愧的；惭愧的","r":[]},{"i":131,"s":"高频","l":5,"w":"amuse","p":"əˈmjuːz","d":"vt. 逗乐；娱乐","r":[]},{"i":132,"s":"高频","l":5,"w":"deliberate","p":"dɪˈlɪbərət","d":"a. 故意的；不慌不忙的 v. 仔细考虑","r":[["deliberately","dɪˈlɪbərətli","ad. 故意；不慌不忙地"]]},{"i":133,"s":"高频","l":5,"w":"award","p":"əˈwɔːd","d":"n. 奖品；奖金","r":[]},{"i":134,"s":"高频","l":5,"w":"deteriorate","p":"dɪˈtɪəriəreɪt","d":"v. 恶化","r":[]},{"i":135,"s":"高频","l":5,"w":"arise","p":"əˈraɪz","d":"vi. 出现；由……引起；起来","r":[]},{"i":136,"s":"高频","l":5,"w":"arouse","p":"əˈraʊz","d":"vt. 唤醒；引起；激起","r":[]},{"i":137,"s":"高频","l":5,"w":"concept","p":"ˈkɒnsept","d":"n. 概念；观念；理念","r":[]},{"i":138,"s":"高频","l":5,"w":"avenue","p":"ˈævənjuː","d":"n. 大街；林荫道；途径","r":[]},{"i":139,"s":"高频","l":5,"w":"capable","p":"ˈkeɪpəbl","d":"a. 有能力的；有才能的","r":[]},{"i":140,"s":"高频","l":5,"w":"occupy","p":"ˈɒkjupaɪ","d":"vt. 占领；占用","r":[["occupation","ˌɒkjuˈpeɪʃn","n. 占领；职业"]]},{"i":141,"s":"高频","l":5,"w":"perceive","p":"pəˈsiːv","d":"vt. 理解；察觉；感觉","r":[]},{"i":142,"s":"高频","l":5,"w":"reception","p":"rɪˈsepʃn","d":"n. 接待（处）；招待会；接收","r":[]},{"i":143,"s":"高频","l":5,"w":"defense","p":"dɪˈfens","d":"n. 防卫；保护；辩护","r":[]},{"i":144,"s":"高频","l":5,"w":"occasion","p":"əˈkeɪʒn","d":"n. 时机；场合","r":[["occasional","əˈkeɪʒənl","a. 偶然的；临时的"]]},{"i":145,"s":"高频","l":5,"w":"cable","p":"ˈkeɪbl","d":"n. 缆；索；电缆","r":[]},{"i":146,"s":"高频","l":5,"w":"region","p":"ˈriːdʒən","d":"n. 地区；地带；领域","r":[]},{"i":147,"s":"高频","l":5,"w":"regulate","p":"ˈreɡjuleɪt","d":"vt. 管理；控制；调整；调节","r":[]},{"i":148,"s":"高频","l":5,"w":"royal","p":"ˈrɔɪəl","d":"a. 王室的；皇家的；盛大的","r":[]},{"i":149,"s":"高频","l":5,"w":"bankrupt","p":"ˈbæŋkrʌpt","d":"a. & n. & v. 倒闭","r":[]},{"i":150,"s":"高频","l":5,"w":"corrupt","p":"kəˈrʌpt","d":"a. 贪污的 vt. 使腐化；使堕落","r":[]},{"i":151,"s":"高频","l":6,"w":"disrupt","p":"dɪsˈrʌpt","d":"vt. 扰乱；使中断","r":[]},{"i":152,"s":"高频","l":6,"w":"interrupt","p":"ˌɪntəˈrʌpt","d":"v. 打断；打扰","r":[]},{"i":153,"s":"高频","l":6,"w":"moral","p":"ˈmɒrəl","d":"a. 道德的；合乎道德的 n. 道德；寓意","r":[]},{"i":154,"s":"高频","l":6,"w":"orbit","p":"ˈɔːbɪt","d":"vt. 环绕……运行 n. 轨道","r":[]},{"i":155,"s":"高频","l":6,"w":"optimism","p":"ˈɒptɪmɪzəm","d":"n. 乐观（主义）","r":[]},{"i":156,"s":"高频","l":6,"w":"antique","p":"ænˈtiːk","d":"n. 文物 a. 陈旧的","r":[]},{"i":157,"s":"高频","l":6,"w":"nourish","p":"ˈnʌrɪʃ","d":"vt. 滋养；养育","r":[]},{"i":158,"s":"高频","l":6,"w":"inferior","p":"ɪnˈfɪəriə(r)","d":"a. 下等的；级别低的","r":[]},{"i":159,"s":"高频","l":6,"w":"optional","p":"ˈɒpʃənl","d":"a. 可选择的","r":[]},{"i":160,"s":"高频","l":6,"w":"adoption","p":"əˈdɒpʃn","d":"n. 采用；收养","r":[]},{"i":161,"s":"高频","l":6,"w":"geology","p":"dʒiˈɒlədʒi","d":"n. 地质学；地质","r":[]},{"i":162,"s":"高频","l":6,"w":"sensible","p":"ˈsensəbl","d":"a. 明智的；意识到的","r":[]},{"i":163,"s":"高频","l":6,"w":"sensitive","p":"ˈsensətɪv","d":"a. 敏感的；灵敏的","r":[]},{"i":164,"s":"高频","l":6,"w":"consent","p":"kənˈsent","d":"n. & v. 同意；赞成","r":[]},{"i":165,"s":"高频","l":6,"w":"resent","p":"rɪˈzent","d":"vt. 愤恨；怨恨","r":[]},{"i":166,"s":"高频","l":6,"w":"represent","p":"ˌreprɪˈzent","d":"vt. 代表；陈述","r":[["representative","ˌreprɪˈzentətɪv","a. 典型的；有代表性的 n. 代表"]]},{"i":167,"s":"高频","l":6,"w":"fraction","p":"ˈfrækʃn","d":"n. 小部分；分数","r":[["fragment","ˈfræɡmənt","n. 碎片；片段"]]},{"i":168,"s":"高频","l":6,"w":"principal","p":"ˈprɪnsəpl","d":"a. 主要的 n. 校长","r":[]},{"i":169,"s":"高频","l":6,"w":"principle","p":"ˈprɪnsəpl","d":"n. 原则","r":[]},{"i":170,"s":"高频","l":6,"w":"premier","p":"ˈpremiə(r)","d":"n. 首相 a. 首要的","r":[]},{"i":171,"s":"高频","l":6,"w":"preferable","p":"ˈprefrəbl","d":"a. 更可取的；更好的","r":[["preference","ˈprefrəns","n. 偏爱，喜爱"]]},{"i":172,"s":"高频","l":6,"w":"preliminary","p":"prɪˈlɪmɪnəri","d":"a. 预备的；初步的","r":[]},{"i":173,"s":"高频","l":6,"w":"prejudice","p":"ˈpredʒudɪs","d":"n. 偏见；成见","r":[]},{"i":174,"s":"高频","l":6,"w":"pretend","p":"prɪˈtend","d":"v. 假装；装作","r":[]},{"i":175,"s":"高频","l":6,"w":"prevent","p":"prɪˈvent","d":"vt. 预防；防止","r":[]},{"i":176,"s":"高频","l":6,"w":"prevail","p":"prɪˈveɪl","d":"vi. 优胜；流行","r":[]},{"i":177,"s":"高频","l":6,"w":"precise","p":"prɪˈsaɪs","d":"a. 精确的；清晰的","r":[]},{"i":178,"s":"高频","l":6,"w":"invade","p":"ɪnˈveɪd","d":"v. 入侵 vt. 干扰","r":[]},{"i":179,"s":"高频","l":6,"w":"index","p":"ˈɪndeks","d":"n. 索引；指标","r":[]},{"i":180,"s":"高频","l":6,"w":"indicate","p":"ˈɪndɪkeɪt","d":"vt. 表明；暗示","r":[]},{"i":181,"s":"高频","l":7,"w":"thoughtful","p":"ˈθɔːtfl","d":"a. 沉思的；体贴的","r":[]},{"i":182,"s":"高频","l":7,"w":"considerate","p":"kənˈsɪdərət","d":"a. 体贴的；体谅的","r":[]},{"i":183,"s":"高频","l":7,"w":"faithful","p":"ˈfeɪθfl","d":"a. 忠诚的；如实的","r":[]},{"i":184,"s":"高频","l":7,"w":"fruitful","p":"ˈfruːtfl","d":"a. 成果丰硕的","r":[]},{"i":185,"s":"高频","l":7,"w":"calendar","p":"ˈkælɪndə(r)","d":"n. 日历","r":[]},{"i":186,"s":"高频","l":7,"w":"scholar","p":"ˈskɒlə(r)","d":"n. 学者","r":[]},{"i":187,"s":"高频","l":7,"w":"lunar","p":"ˈluːnə(r)","d":"a. 月亮的；阴历的","r":[]},{"i":188,"s":"高频","l":7,"w":"plentiful","p":"ˈplentɪfl","d":"a. 丰富的；富裕的","r":[]},{"i":189,"s":"高频","l":7,"w":"skillful","p":"ˈskɪlfl","d":"a. 灵巧的；熟练的","r":[]},{"i":190,"s":"高频","l":7,"w":"dynamic","p":"daɪˈnæmɪk","d":"a. & n. 动力的；有活力的","r":[]},{"i":191,"s":"高频","l":7,"w":"dramatic","p":"drəˈmætɪk","d":"a. 戏剧的","r":[]},{"i":192,"s":"高频","l":7,"w":"magnetic","p":"mæɡˈnetɪk","d":"a. 有磁性的；有吸引力的","r":[]},{"i":193,"s":"高频","l":7,"w":"alcohol","p":"ˈælkəhɒl","d":"n. 酒精","r":[]},{"i":194,"s":"高频","l":7,"w":"diplomatic","p":"ˌdɪpləˈmætɪk","d":"a. 外交上的；灵活变通的","r":[]},{"i":195,"s":"高频","l":7,"w":"idealistic","p":"ˌaɪdiəˈlɪstɪk","d":"a. 理想主义的；空想的","r":[]},{"i":196,"s":"高频","l":7,"w":"strategic","p":"strəˈtiːdʒɪk","d":"a. 战略性的；关键的","r":[]},{"i":197,"s":"高频","l":7,"w":"ethic","p":"ˈeθɪk","d":"n. 道德规范；伦理学","r":[]},{"i":198,"s":"高频","l":7,"w":"pessimistic","p":"ˌpesɪˈmɪstɪk","d":"a. 悲观的；悲观主义的","r":[]},{"i":199,"s":"高频","l":7,"w":"romantic","p":"rəʊˈmæntɪk","d":"a. 浪漫的","r":[]},{"i":200,"s":"高频","l":7,"w":"academic","p":"ˌækəˈdemɪk","d":"a. 学术的；学院的","r":[]},{"i":201,"s":"高频","l":7,"w":"characteristic","p":"ˌkærəktəˈrɪstɪk","d":"n. 特征 a. 典型的","r":[]},{"i":202,"s":"高频","l":7,"w":"cubic","p":"ˈkjuːbɪk","d":"a. 立方形的","r":[]},{"i":203,"s":"高频","l":7,"w":"brochure","p":"ˈbrəʊʃə(r)","d":"n. 手册；小册子","r":[]},{"i":204,"s":"高频","l":7,"w":"assure","p":"əˈʃɔː(r)","d":"vt. 使确信","r":[]},{"i":205,"s":"高频","l":7,"w":"ensure","p":"ɪnˈʃɔː(r)","d":"vt. 保证","r":[]},{"i":206,"s":"高频","l":7,"w":"insure","p":"ɪnˈʃɔː(r)","d":"v. 投保；承保","r":[["insurance","ɪnˈʃɔːrəns","n. 保险；保险费"]]},{"i":207,"s":"高频","l":7,"w":"panel","p":"ˈpænl","d":"n. 嵌板；镶板；专家资讯组","r":[]},{"i":208,"s":"高频","l":7,"w":"punctual","p":"ˈpʌŋktʃuəl","d":"a. 按时的；准时的","r":[]},{"i":209,"s":"高频","l":7,"w":"input","p":"ˈɪnpʊt","d":"n. & v. 输入.投入资源","r":[]},{"i":210,"s":"高频","l":7,"w":"install","p":"ɪnˈstɔːl","d":"vt. 安装；任命","r":[]},{"i":211,"s":"高频","l":8,"w":"inclusive","p":"ɪnˈkluːsɪv","d":"a. 包含广阔的","r":[]},{"i":212,"s":"高频","l":8,"w":"instant","p":"ˈɪnstənt","d":"a. 立即的 n. 瞬间","r":[]},{"i":213,"s":"高频","l":8,"w":"instinct","p":"ˈɪnstɪŋkt","d":"n. 天性","r":[]},{"i":214,"s":"高频","l":8,"w":"institute","p":"ˈɪnstɪtjuːt","d":"n. 机构；研究院","r":[]},{"i":215,"s":"高频","l":8,"w":"insult","p":"ɪnˈsʌlt","d":"vt. 侮辱；冒犯","r":[]},{"i":216,"s":"高频","l":8,"w":"investigate","p":"ɪnˈvestɪɡeɪt","d":"v. 调查","r":[]},{"i":217,"s":"高频","l":8,"w":"insane","p":"ɪnˈseɪn","d":"a. 精神失常的；疯狂的","r":[]},{"i":218,"s":"高频","l":8,"w":"implement","p":"ˈɪmplɪmənt","d":"v. 实行 n. 工具","r":[]},{"i":219,"s":"高频","l":8,"w":"impulse","p":"ˈɪmpʌls","d":"n. 冲动；推动力","r":[]},{"i":220,"s":"高频","l":8,"w":"inflate","p":"ɪnˈfleɪt","d":"v. 充气；膨胀","r":[["inflation","ɪnˈfleɪʃn","n. 通货膨胀"]]},{"i":221,"s":"高频","l":8,"w":"insight","p":"ˈɪnsaɪt","d":"n. 洞察力；领悟","r":[]},{"i":222,"s":"高频","l":8,"w":"intact","p":"ɪnˈtækt","d":"a. 完整的","r":[]},{"i":223,"s":"高频","l":8,"w":"intake","p":"ˈɪnteɪk","d":"n. 吸收；摄取（量）","r":[]},{"i":224,"s":"高频","l":8,"w":"intrude","p":"ɪnˈtruːd","d":"vi. 闯入；侵入","r":[]},{"i":225,"s":"高频","l":8,"w":"irregular","p":"ɪˈreɡjələ(r)","d":"a. 不规则的；非正规的","r":[]},{"i":226,"s":"高频","l":8,"w":"irrigate","p":"ˈɪrɪɡeɪt","d":"vt. 灌溉；冲洗","r":[]},{"i":227,"s":"高频","l":8,"w":"object","p":"ˈɒbdʒɪkt","d":"n. 物体；目标 [əbˈdʒekt] vi. 反对","r":[]},{"i":228,"s":"高频","l":8,"w":"oblige","p":"əˈblaɪdʒ","d":"vt. 迫使；帮忙","r":[]},{"i":229,"s":"高频","l":8,"w":"obstacle","p":"ˈɒbstəkl","d":"n. 障碍；障碍物","r":[]},{"i":230,"s":"高频","l":8,"w":"vague","p":"veɪɡ","d":"a. 含糊的；不明确的","r":[]},{"i":231,"s":"高频","l":8,"w":"error","p":"ˈerə(r)","d":"n. 错误；差错","r":[]},{"i":232,"s":"高频","l":8,"w":"miserable","p":"ˈmɪzərəbl","d":"a. 痛苦的；悲惨的","r":[]},{"i":233,"s":"高频","l":8,"w":"construct","p":"kənˈstrʌkt","d":"vt. 建造；建设","r":[]},{"i":234,"s":"高频","l":8,"w":"structure","p":"ˈstrʌktʃə(r)","d":"n. 结构；构造；建筑物","r":[]},{"i":235,"s":"高频","l":8,"w":"destruction","p":"dɪˈstrʌkʃn","d":"n. 破坏；毁灭","r":[]},{"i":236,"s":"高频","l":8,"w":"instruction","p":"ɪnˈstrʌkʃn","d":"n. 教授；指导；命令","r":[["instrument","ˈɪnstrəmənt","n. 仪器；工具；乐器；手段"]]},{"i":237,"s":"高频","l":8,"w":"navy","p":"ˈneɪvi","d":"n. 海军","r":[["navigate","ˈnævɪɡeɪt","v. 导航；航行"]]},{"i":238,"s":"高频","l":8,"w":"pump","p":"pʌmp","d":"n. 泵 vt. (用泵) 抽送","r":[]},{"i":239,"s":"高频","l":8,"w":"prescribe","p":"prɪˈskraɪb","d":"vt. 开（处方）","r":[]},{"i":240,"s":"高频","l":8,"w":"artificial","p":"ˌɑːtɪˈfɪʃl","d":"a. 人造的；虚伪的","r":[]},{"i":241,"s":"高频","l":9,"w":"privilege","p":"ˈprɪvəlɪdʒ","d":"n. 特权；优惠","r":[]},{"i":242,"s":"高频","l":9,"w":"infer","p":"ɪnˈfɜː(r)","d":"v. 推断；推论","r":[]},{"i":243,"s":"高频","l":9,"w":"vital","p":"ˈvaɪtl","d":"a. 至关重要的；生命的；充满生机的","r":[]},{"i":244,"s":"高频","l":9,"w":"vigor","p":"ˈvɪɡə","d":"n. 活力；精力；热情","r":[["vigorous","ˈvɪɡərəs","a. 充满活力的"]]},{"i":245,"s":"高频","l":9,"w":"vivid","p":"ˈvɪvɪd","d":"a. 生动的；清晰的","r":[]},{"i":246,"s":"高频","l":9,"w":"enclose","p":"ɪnˈkləʊz","d":"vt. 围住","r":[]},{"i":247,"s":"高频","l":9,"w":"exclusively","p":"ɪkˈskluːsɪvli","d":"ad. 排外地；专门地","r":[]},{"i":248,"s":"高频","l":9,"w":"mutual","p":"ˈmjuːtʃuəl","d":"a. 相互的；共同的","r":[]},{"i":249,"s":"高频","l":9,"w":"moisture","p":"ˈmɔɪstʃə(r)","d":"n. 潮气；湿气；湿度","r":[["moist","mɔɪst","a. 潮湿的；湿润的"]]},{"i":250,"s":"高频","l":9,"w":"feature","p":"ˈfiːtʃə(r)","d":"n. 特征；特色","r":[]},{"i":251,"s":"高频","l":9,"w":"procedure","p":"prəˈsiːdʒə(r)","d":"n. 程序；步骤","r":[]},{"i":252,"s":"高频","l":9,"w":"manufacture","p":"ˌmænjuˈfæktʃə(r)","d":"vt. (大规模) 制造 n. 产品","r":[]},{"i":253,"s":"高频","l":9,"w":"restrict","p":"rɪˈstrɪkt","d":"vt. 限制；限定；约束","r":[]},{"i":254,"s":"高频","l":9,"w":"stimulate","p":"ˈstɪmjəleɪt","d":"vt. 刺激；激励；激发","r":[]},{"i":255,"s":"高频","l":9,"w":"venture","p":"ˈventʃə(r)","d":"n. （风险的）企业；商业 v. 敢于去","r":[]},{"i":256,"s":"高频","l":9,"w":"innovate","p":"ˈɪnəveɪt","d":"v. 创新；革新","r":[["innovation","ˌɪnəˈveɪʃn","n. 创新；革新；改革"],["innovative","ˈɪnəveɪtɪv","a. 革新的；创新的"]]},{"i":257,"s":"高频","l":9,"w":"violate","p":"ˈvaɪəleɪt","d":"v. 侵犯；违反；玷污","r":[]},{"i":258,"s":"高频","l":9,"w":"delicate","p":"ˈdelɪkət","d":"a. 精致的；易损的；微妙的","r":[]},{"i":259,"s":"高频","l":9,"w":"estimate","p":"ˈestɪmət","d":"vt. 估计；估计","r":[]},{"i":260,"s":"高频","l":9,"w":"evaluate","p":"ɪˈvæljueɪt","d":"vt. 评估；估价","r":[]},{"i":261,"s":"高频","l":9,"w":"imitate","p":"ˈɪmɪteɪt","d":"vt. 模仿；仿效","r":[]},{"i":262,"s":"高频","l":9,"w":"penetrate","p":"ˌpenɪˈtreɪt","d":"v. 穿过；渗透","r":[]},{"i":263,"s":"高频","l":9,"w":"adequate","p":"ˈædɪkwət","d":"a. 足够的；充分的","r":[]},{"i":264,"s":"高频","l":9,"w":"anticipate","p":"ænˈtɪsɪpeɪt","d":"vt. 预料；预期；期望","r":[]},{"i":265,"s":"高频","l":9,"w":"candidate","p":"ˈkændɪdət","d":"n. 候选人；应试者","r":[]},{"i":266,"s":"高频","l":9,"w":"furnish","p":"ˈfɜːnɪʃ","d":"vt. 布置家具","r":[["furniture","ˈfɜːnɪtʃə(r)","n. 家具"]]},{"i":267,"s":"高频","l":9,"w":"pirate","p":"ˈpaɪrət","d":"n. 海盗；盗版 vt. 盗用","r":[]},{"i":268,"s":"高频","l":9,"w":"vibrate","p":"vaɪˈbreɪt","d":"v. (使) 颤动","r":[]},{"i":269,"s":"高频","l":9,"w":"coordinate","p":"kəʊˈɔːdɪneɪt","d":"vt. (使) 协调；调节 n. 坐标","r":[]},{"i":270,"s":"高频","l":9,"w":"isolate","p":"ˈaɪsəleɪt","d":"vt. 使隔离；使孤立","r":[]},{"i":271,"s":"高频","l":10,"w":"accelerate","p":"əkˈseləreɪt","d":"v.（使）加速","r":[]},{"i":272,"s":"高频","l":10,"w":"justice","p":"ˈdʒʌstɪs","d":"n. 公正；正义；司法","r":[]},{"i":273,"s":"高频","l":10,"w":"adjust","p":"əˈdʒʌst","d":"vt. 调整；调节 v. 适应","r":[]},{"i":274,"s":"高频","l":10,"w":"portion","p":"ˈpɔːʃn","d":"n. 部分；一份","r":[]},{"i":275,"s":"高频","l":10,"w":"petrol","p":"ˈpetrəl","d":"n. 汽油","r":[]},{"i":276,"s":"高频","l":10,"w":"velocity","p":"vəˈlɒsəti","d":"n. 速度","r":[]},{"i":277,"s":"高频","l":10,"w":"integrity","p":"ɪnˈteɡrəti","d":"n. 完整；诚实；正直","r":[]},{"i":278,"s":"高频","l":10,"w":"density","p":"ˈdensəti","d":"n. 密度","r":[["dense","dens","a. 密集的"]]},{"i":279,"s":"高频","l":10,"w":"elastic","p":"ɪˈlæstɪk","d":"a. 有弹性的；灵活的 n. 松紧带","r":[]},{"i":280,"s":"高频","l":10,"w":"dignity","p":"ˈdɪɡnəti","d":"n. 尊严；尊贵；高尚","r":[]},{"i":281,"s":"高频","l":10,"w":"forbid","p":"fəˈbɪd","d":"v. 禁止；不许；阻止","r":[]},{"i":282,"s":"高频","l":10,"w":"minority","p":"maɪˈnɒrəti","d":"n. 少数；少数民族","r":[]},{"i":283,"s":"高频","l":10,"w":"nationality","p":"ˌnæʃəˈnæləti","d":"n. 国籍；民族","r":[]},{"i":284,"s":"高频","l":10,"w":"arrange","p":"əˈreɪndʒ","d":"vt. 整理；排列 v. 安排","r":[]},{"i":285,"s":"高频","l":10,"w":"register","p":"ˈredʒɪstə(r)","d":"v. 登记；注册 n. 登记薄","r":[]},{"i":286,"s":"高频","l":10,"w":"joint","p":"dʒɔɪnt","d":"a. 联合的；共同的","r":[]},{"i":287,"s":"高频","l":10,"w":"incline","p":"ɪnˈklaɪn","d":"v. 倾向于 n. 斜坡","r":[]},{"i":288,"s":"高频","l":10,"w":"facility","p":"fəˈsɪləti","d":"n. 设备；设施","r":[]},{"i":289,"s":"高频","l":10,"w":"penalty","p":"ˈpenəlti","d":"n. 惩罚；处罚；刑罚","r":[]},{"i":290,"s":"高频","l":10,"w":"collaborate","p":"kəˈlæbəreɪt","d":"vi. 合作","r":[["collaboration","kəˌlæbəˈreɪʃn","n. 合作"]]},{"i":291,"s":"高频","l":10,"w":"elaborate","p":"ɪˈlæbərət","d":"a. 精心制作的；复杂的；详尽的 v. 详尽说明","r":[]},{"i":292,"s":"高频","l":10,"w":"multiply","p":"ˈmʌltɪplaɪ","d":"v. 乘；迅速增加","r":[]},{"i":293,"s":"高频","l":10,"w":"forecast","p":"ˈfɔːkɑːst","d":"n. & vt. 预测；预报","r":[]},{"i":294,"s":"高频","l":10,"w":"foremost","p":"ˈfɔːməʊst","d":"a. 最重要的；最前的","r":[]},{"i":295,"s":"高频","l":10,"w":"legislate","p":"ˈledʒɪsleɪt","d":"vi. 立法；制定法律","r":[]},{"i":296,"s":"高频","l":10,"w":"refrigerator","p":"rɪˈfrɪdʒəreɪtə(r)","d":"n. 冰箱；冷藏库","r":[]},{"i":297,"s":"高频","l":10,"w":"ballot","p":"ˈbælət","d":"n. 无记名投票；投票选举 v. 投票","r":[]},{"i":298,"s":"高频","l":10,"w":"gravity","p":"ˈɡrævəti","d":"n. 重力；引力；严重性","r":[]},{"i":299,"s":"高频","l":10,"w":"discard","p":"dɪsˈkɑːd","d":"vt. 丢弃；抛弃","r":[]},{"i":300,"s":"高频","l":10,"w":"distribute","p":"dɪˈstrɪbjuːt","d":"vt. 分配","r":[]},{"i":301,"s":"高频","l":11,"w":"discharge","p":"dɪsˈtʃɑːdʒ","d":"vt. 释放；解雇；排放 n. 排出（物）","r":[]},{"i":302,"s":"高频","l":11,"w":"discriminate","p":"dɪˈskrɪmɪneɪt","d":"v. 辨别；歧视","r":[]},{"i":303,"s":"高频","l":11,"w":"disguise","p":"dɪsˈɡaɪz","d":"vt. & n. 伪装；假扮","r":[]},{"i":304,"s":"高频","l":11,"w":"disgust","p":"dɪsˈɡʌst","d":"n. 厌恶 vt. 使反感","r":[]},{"i":305,"s":"高频","l":11,"w":"integrate","p":"ˈɪntɪɡreɪt","d":"v.（使）成为整体","r":[["disintegrate","dɪsˈɪntɪɡreɪt","v.（使）碎裂；（使）解体"]]},{"i":306,"s":"高频","l":11,"w":"distress","p":"dɪˈstres","d":"n. 悲痛；不幸；贫困 vt. 使悲痛","r":[]},{"i":307,"s":"高频","l":11,"w":"dispute","p":"dɪˈspjuːt","d":"n. & v. 争辩；辩论","r":[]},{"i":308,"s":"高频","l":11,"w":"dilemma","p":"dɪˈlemə","d":"n.（进退两难的）窘境；困境","r":[]},{"i":309,"s":"高频","l":11,"w":"dioxide","p":"daɪˈɒksaɪd","d":"n. 二氧化物","r":[]},{"i":310,"s":"高频","l":11,"w":"disobey","p":"ˌdɪsəˈbeɪ","d":"vt. 不服从","r":[]},{"i":311,"s":"高频","l":11,"w":"distinct","p":"dɪˈstɪŋkt","d":"a. 明显的；清楚的","r":[]},{"i":312,"s":"高频","l":11,"w":"distinction","p":"dɪˈstɪŋkʃn","d":"n. 差别；优秀；荣誉","r":[["distinguished","dɪˈstɪŋɡwɪʃt","a. 卓越的；杰出的"]]},{"i":313,"s":"高频","l":11,"w":"genius","p":"ˈdʒiːniəs","d":"n. 天才；天赋；天资","r":[]},{"i":314,"s":"高频","l":11,"w":"genuine","p":"ˈdʒenjuɪn","d":"a. 真的；真诚的","r":[]},{"i":315,"s":"高频","l":11,"w":"gene","p":"dʒiːn","d":"n. 基因","r":[]},{"i":316,"s":"高频","l":11,"w":"abolish","p":"əˈbɒlɪʃ","d":"v. 废除；废止","r":[]},{"i":317,"s":"高频","l":11,"w":"dispatch","p":"dɪˈspætʃ","d":"v. & n. 派遣","r":[]},{"i":318,"s":"高频","l":11,"w":"absent","p":"ˈæbsənt","d":"a. 缺少的；缺席的；心不在焉的","r":[]},{"i":319,"s":"高频","l":11,"w":"cease","p":"siːs","d":"v. 停止；停息","r":[]},{"i":320,"s":"高频","l":11,"w":"proceed","p":"prəˈsiːd","d":"vi. 继续进行；前往 vt. 接着做","r":[["procession","prəˈseʃn","n. 队伍；行列"]]},{"i":321,"s":"高频","l":11,"w":"exceed","p":"ɪkˈsiːd","d":"vt. 超出；超过；超越","r":[["excess","ɪkˈses; ˈekses","n. 过量；过度 a. 超额的"],["excessive","ɪkˈsesɪv","a. 过分的；过度的"]]},{"i":322,"s":"高频","l":11,"w":"abuse","p":"əˈbjuːz; əˈbjuːs","d":"vt. 滥用；虐待 n. 滥用；虐待","r":[]},{"i":323,"s":"高频","l":11,"w":"absorb","p":"əbˈsɔːb","d":"vt. 吸收；吸引；使专心","r":[]},{"i":324,"s":"高频","l":11,"w":"abstract","p":"ˈæbstrækt; æbˈstrækt","d":"n. 摘要 a. 抽象的 vt. 提取","r":[]},{"i":325,"s":"高频","l":11,"w":"solemn","p":"ˈsɒləm","d":"a. 庄严的；严肃的","r":[]},{"i":326,"s":"高频","l":11,"w":"practically","p":"ˈpræktɪkli","d":"ad. 实际地；几乎","r":[]},{"i":327,"s":"高频","l":11,"w":"pioneer","p":"ˌpaɪəˈnɪə(r)","d":"n. 先驱者","r":[]},{"i":328,"s":"高频","l":11,"w":"routine","p":"ruːˈtiːn","d":"n. 常规 a. 日常的","r":[]},{"i":329,"s":"高频","l":11,"w":"marine","p":"məˈriːn","d":"a. 海的；海上的","r":[]},{"i":330,"s":"高频","l":11,"w":"ideal","p":"aɪˈdɪəl","d":"a. 理想的；最佳的 n. 理想；典范","r":[]},{"i":331,"s":"高频","l":12,"w":"vehicle","p":"ˈviːəkl","d":"n. 车辆；工具；手段","r":[]},{"i":332,"s":"高频","l":12,"w":"intimate","p":"ˈɪntɪmət","d":"a. 亲密的 n. 密友","r":[]},{"i":333,"s":"高频","l":12,"w":"realistic","p":"ˌriːəˈlɪstɪk","d":"a. 现实的；切实可行的","r":[]},{"i":334,"s":"高频","l":12,"w":"surge","p":"sɜːdʒ","d":"vi. & n. 激增；涌动","r":[]},{"i":335,"s":"高频","l":12,"w":"reckon","p":"ˈrekən","d":"vt. 认为；预计；估计","r":[]},{"i":336,"s":"高频","l":12,"w":"ozone","p":"ˈəʊzəʊn","d":"n. 臭氧","r":[]},{"i":337,"s":"高频","l":12,"w":"display","p":"dɪˈspleɪ","d":"n./v. 陈列；展览","r":[]},{"i":338,"s":"高频","l":12,"w":"habitat","p":"ˈhæbɪtæt","d":"n. 栖息地","r":[["inhabit","ɪnˈhæbɪt","v. 居住于；栖息于"],["inhabitant","ɪnˈhæbɪtənt","n. 居民；栖息动物"]]},{"i":339,"s":"高频","l":12,"w":"vertical","p":"ˈvɜːtɪkl","d":"a. 垂直的；直立的；纵向的","r":[]},{"i":340,"s":"高频","l":12,"w":"convert","p":"kənˈvɜːt","d":"v.（使）转变；（使）皈依","r":[]},{"i":341,"s":"高频","l":12,"w":"converse","p":"kənˈvɜːs; ˈkɒnvɜːs","d":"vi. 交谈；谈话 n. 相反的事物","r":[["conversation","ˌkɒnvəˈseɪʃn","n.（非正式的）谈话；会话"]]},{"i":342,"s":"高频","l":12,"w":"version","p":"ˈvɜːʃn","d":"n. 版本；译文；说法","r":[]},{"i":343,"s":"高频","l":12,"w":"confine","p":"kənˈfaɪn","d":"vt. 限制；禁闭","r":[]},{"i":344,"s":"高频","l":12,"w":"finite","p":"ˈfaɪnaɪt","d":"a. 有限的","r":[["infinite","ˈɪnfɪnət","a. 无限的；极大的"]]},{"i":345,"s":"高频","l":12,"w":"define","p":"dɪˈfaɪn","d":"vt. 使明确；给……下定义；界定","r":[["definition","ˌdefɪˈnɪʃn","n. 定义"],["definite","ˈdefɪnət","a. 明确的；确定的"]]},{"i":346,"s":"高频","l":12,"w":"reverse","p":"rɪˈvɜːs","d":"v. 颠倒；反转 a. 相反的","r":[]},{"i":347,"s":"高频","l":12,"w":"diverse","p":"daɪˈvɜːs","d":"a. 不同的；多种多样的","r":[]},{"i":348,"s":"高频","l":12,"w":"successive","p":"səkˈsesɪv","d":"a. 连续的；相继的","r":[]},{"i":349,"s":"高频","l":12,"w":"refine","p":"rɪˈfaɪn","d":"vt. 精炼；提纯；改善","r":[["refined","rɪˈfaɪnd","a. 精炼的；举止优雅的"]]},{"i":350,"s":"高频","l":12,"w":"municipal","p":"mjuːˈnɪsɪpl","d":"a. 市政的；市的","r":[]},{"i":351,"s":"高频","l":12,"w":"unique","p":"juˈniːk","d":"a. 唯一的；独一无二的","r":[]},{"i":352,"s":"高频","l":12,"w":"community","p":"kəˈmjuːnəti","d":"n. 社区；社会；社团","r":[["commune","ˈkɒmjuːn","n. 公社"]]},{"i":353,"s":"高频","l":12,"w":"interval","p":"ˈɪntəvl","d":"n. 间隔；休息时间","r":[]},{"i":354,"s":"高频","l":12,"w":"universal","p":"ˌjuːnɪˈvɜːsl","d":"a. 普遍的；通用的；全体的；共同的","r":[]},{"i":355,"s":"高频","l":12,"w":"nuclear","p":"ˈnjuːkliə(r)","d":"a. 原子核的；核能的","r":[]},{"i":356,"s":"高频","l":12,"w":"superficial","p":"ˌsuːpəˈfɪʃl","d":"a. 表面的；肤浅的","r":[]},{"i":357,"s":"高频","l":12,"w":"supreme","p":"suːˈpriːm","d":"a. 最高的；至高的；最重要的","r":[]},{"i":358,"s":"高频","l":12,"w":"superior","p":"suːˈpɪəriə(r)","d":"a. 较高的；更好的；卓越的","r":[]},{"i":359,"s":"高频","l":12,"w":"explode","p":"ɪkˈspləʊd","d":"v.（使）爆炸 vi. 爆发","r":[["explosion","ɪkˈspləʊʒn","n. 爆炸；激增"]]},{"i":360,"s":"高频","l":12,"w":"intelligent","p":"ɪnˈtelɪdʒənt","d":"a. 聪明的；有才智的；智能的","r":[["intelligence","ɪnˈtelɪdʒəns","n. 才智；情报"]]},{"i":361,"s":"高频","l":13,"w":"interfere","p":"ˌɪntəˈfɪə(r)","d":"vi. 干涉；干扰；妨碍","r":[]},{"i":362,"s":"高频","l":13,"w":"interior","p":"ɪnˈtɪəriə(r)","d":"a. 内部的 n. 内部；内地","r":[]},{"i":363,"s":"高频","l":13,"w":"interpret","p":"ɪnˈtɜːprɪt","d":"vt. 解释；说明","r":[]},{"i":364,"s":"高频","l":13,"w":"enterprise","p":"ˈentəpraɪz","d":"n. 企业；事业心","r":[["entrepreneur","ˌɒntrəprəˈnɜː(r)","n. 企业家"]]},{"i":365,"s":"高频","l":13,"w":"exhaust","p":"ɪɡˈzɔːst","d":"v. 筋疲力尽；用光；花完","r":[["exhausted","ɪɡˈzɔːstɪd","a. 筋疲力尽的；用光的"]]},{"i":366,"s":"高频","l":13,"w":"exaggerate","p":"ɪɡˈzædʒəreɪt","d":"v. 夸大；夸张","r":[]},{"i":367,"s":"高频","l":13,"w":"exclaim","p":"ɪkˈskleɪm","d":"vi. 呼喊；惊叫","r":[]},{"i":368,"s":"高频","l":13,"w":"execute","p":"ɪɡˈzekjət","d":"vt. 实施；执行；处死","r":[["executive","ɪɡˈzekjətɪv","n. 主管领导；管理人员 a. 执行的"]]},{"i":369,"s":"高频","l":13,"w":"explicit","p":"ɪkˈsplɪsɪt","d":"a. 明确的；清楚的","r":[]},{"i":370,"s":"高频","l":13,"w":"extinguish","p":"ɪkˈstɪŋɡwɪʃ","d":"vt. 扑灭；熄灭；消灭；消除","r":[]},{"i":371,"s":"高频","l":13,"w":"exploit","p":"ɪkˈsplɔɪt","d":"vt. 利用；开采；剥削","r":[]},{"i":372,"s":"高频","l":13,"w":"exert","p":"ɪɡˈzɜːt","d":"vt. 运用；发挥；尽力；施加","r":[]},{"i":373,"s":"高频","l":13,"w":"exhibit","p":"ɪɡˈzɪbɪt","d":"v. 展览；展出；表现；显出","r":[]},{"i":374,"s":"高频","l":13,"w":"reliability","p":"rɪˌlaɪəˈbɪləti","d":"n. 可靠性","r":[["reliable","rɪˈlaɪəbl","a. 可靠的"]]},{"i":375,"s":"高频","l":13,"w":"stability","p":"stəˈbɪləti","d":"n. 稳定（性）；稳固（性）","r":[["stable","ˈsteɪbl","a. 稳定的"]]},{"i":376,"s":"高频","l":13,"w":"fertile","p":"ˈfɜːtaɪl","d":"a. 肥沃的；多产的；丰富的；能生育的","r":[["fertilizer","ˈfɜːtəlaɪzə(r)","n. 肥料"]]},{"i":377,"s":"高频","l":13,"w":"hostile","p":"ˈhɒstaɪl","d":"a. 敌对的；有敌意的；不友善的","r":[]},{"i":378,"s":"高频","l":13,"w":"restrain","p":"rɪˈstreɪn","d":"v. 约束；管制；限制","r":[]},{"i":379,"s":"高频","l":13,"w":"expert","p":"ˈekspɜːt","d":"n. 专家；行家","r":[["expertise","ˌekspɜːˈtiːz","n. 专门的知识或技能"]]},{"i":380,"s":"高频","l":13,"w":"prior","p":"ˈpraɪə(r)","d":"a. 先前的；优先的","r":[["priority","praɪˈɒrəti","n. 优先；优先权"]]},{"i":381,"s":"高频","l":13,"w":"retail","p":"ˈriːteɪl","d":"n. & v. 零售","r":[]},{"i":382,"s":"高频","l":13,"w":"recruit","p":"rɪˈkruːt","d":"v. 招募；招聘","r":[]},{"i":383,"s":"高频","l":13,"w":"refrain","p":"rɪˈfreɪn","d":"vi. 克制","r":[]},{"i":384,"s":"高频","l":13,"w":"renovate","p":"ˈrenəveɪt","d":"vt. 翻新；修复","r":[]},{"i":385,"s":"高频","l":13,"w":"revenue","p":"ˈrevənjuː","d":"n. 财政收入；税收","r":[]},{"i":386,"s":"高频","l":13,"w":"remedy","p":"ˈremədi","d":"n. 治疗方法；补救措施 vt. 改正","r":[]},{"i":387,"s":"高频","l":13,"w":"rescue","p":"ˈreskjuː","d":"vt. & n. 援救；营救","r":[]},{"i":388,"s":"高频","l":13,"w":"resort","p":"rɪˈzɔːt","d":"vi. 求助；诉诸于 n. 度假胜地","r":[]},{"i":389,"s":"高频","l":13,"w":"reveal","p":"rɪˈviːl","d":"vt. 暴露；显示","r":[]},{"i":390,"s":"高频","l":13,"w":"precaution","p":"prɪˈkɔːʃn","d":"n. 预防措施","r":[]},{"i":391,"s":"高频","l":14,"w":"reinforce","p":"ˌriːɪnˈfɔːs","d":"vt. 增援；加强；加固","r":[]},{"i":392,"s":"高频","l":14,"w":"refresh","p":"rɪˈfreʃ","d":"v. 使恢复；更新；使想起","r":[]},{"i":393,"s":"高频","l":14,"w":"restore","p":"rɪˈstɔː(r)","d":"vt. 恢复；归还；修复","r":[]},{"i":394,"s":"高频","l":14,"w":"retreat","p":"rɪˈtriːt","d":"vi. & n. 后退；撤退；躲避","r":[]},{"i":395,"s":"高频","l":14,"w":"revolt","p":"rɪˈvəʊlt","d":"v. & n. 反抗；反叛","r":[]},{"i":396,"s":"高频","l":14,"w":"speculate","p":"ˈspekjuleɪt","d":"v. 推测；推断；猜测 vi. 投机","r":[]},{"i":397,"s":"高频","l":14,"w":"respective","p":"rɪˈspektɪv","d":"a. 各自的；各个的","r":[]},{"i":398,"s":"高频","l":14,"w":"rebel","p":"rɪˈbel; ˈrebl","d":"vi. 反抗；造反；反叛 n. 反叛者","r":[]},{"i":399,"s":"高频","l":14,"w":"corporation","p":"ˌkɔːpəˈreɪʃn","d":"n. 公司；企业；法人","r":[]},{"i":400,"s":"高频","l":14,"w":"inspect","p":"ɪnˈspekt","d":"vt. 检查；视察；检阅","r":[]},{"i":401,"s":"高频","l":14,"w":"perspective","p":"pəˈspektɪv","d":"n. 观点；看法；透视；视角","r":[]},{"i":402,"s":"高频","l":14,"w":"prospect","p":"ˈprɒspekt","d":"n. 展望；前景；景色","r":[]},{"i":403,"s":"高频","l":14,"w":"specific","p":"spəˈsɪfɪk","d":"a. 明确的；具体的","r":[]},{"i":404,"s":"高频","l":14,"w":"specialize","p":"ˈspeʃəlaɪz","d":"vi. 专攻；专门从事","r":[]},{"i":405,"s":"高频","l":14,"w":"recreation","p":"ˌriːkriˈeɪʃn","d":"n. 娱乐；娱乐活动","r":[]},{"i":406,"s":"高频","l":14,"w":"increasingly","p":"ɪnˈkriːsɪŋli","d":"ad. 日益增长地；越来越多地","r":[]},{"i":407,"s":"高频","l":14,"w":"vacant","p":"ˈveɪkənt","d":"a. 空的；空缺的；呆滞的","r":[]},{"i":408,"s":"高频","l":14,"w":"vacuum","p":"ˈvækjuəm","d":"n. 真空；真空吸尘器","r":[]},{"i":409,"s":"高频","l":14,"w":"vanish","p":"ˈvænɪʃ","d":"vi. 突然不见；消失","r":[]},{"i":410,"s":"高频","l":14,"w":"literal","p":"ˈlɪtərəl","d":"a. 字面意义的；文字的；完全按原文的","r":[]},{"i":411,"s":"高频","l":14,"w":"decent","p":"ˈdiːsnt","d":"a. 体面的；得体的；像样的；高雅的","r":[]},{"i":412,"s":"高频","l":14,"w":"inherit","p":"ɪnˈherɪt","d":"v. 继承（遗产）；遗传","r":[]},{"i":413,"s":"高频","l":14,"w":"dimension","p":"daɪˈmenʃn","d":"n. 维度；方面","r":[]},{"i":414,"s":"高频","l":14,"w":"immense","p":"ɪˈmens","d":"a. 巨大的","r":[]},{"i":415,"s":"高频","l":14,"w":"utilize","p":"ˈjuːtəlaɪz","d":"vt. 利用；使用","r":[["utility","juːˈtɪləti","n. 实用；效用；公共事业"]]},{"i":416,"s":"高频","l":14,"w":"species","p":"ˈspiːʃiːz","d":"n. 物种","r":[]},{"i":417,"s":"高频","l":14,"w":"decorate","p":"ˈdekəreɪt","d":"v. 装饰；装潢","r":[]},{"i":418,"s":"高频","l":14,"w":"humble","p":"ˈhʌmbl","d":"a. 谦逊的","r":[]},{"i":419,"s":"高频","l":14,"w":"equality","p":"iˈkwɒləti","d":"n. 相等；等同；平等","r":[["equivalent","ɪˈkwɪvələnt","a. 等价的；相等的 n. 等价物；相等物"]]},{"i":420,"s":"高频","l":14,"w":"sequence","p":"ˈsiːkwəns","d":"n. 顺序；次序","r":[]},{"i":421,"s":"高频","l":15,"w":"consequence","p":"ˈkɒnsɪkwəns","d":"n. 结果；后果","r":[["consequently","ˈkɒnsɪkwəntly","ad. 因此；所以"]]},{"i":422,"s":"高频","l":15,"w":"subsequent","p":"ˈsʌbsɪkwənt","d":"a. 随后的；后来的","r":[]},{"i":423,"s":"高频","l":15,"w":"sympathize","p":"ˈsɪmpəθaɪz","d":"vi. 同情；支持","r":[["sympathetic","ˌsɪmpəˈθetɪk","a. 同情的；赞同的"]]},{"i":424,"s":"高频","l":15,"w":"passion","p":"ˈpæʃn","d":"n. 激情；热情；爱好","r":[["passionate","ˈpæʃənət","a. 狂热的"]]},{"i":425,"s":"高频","l":15,"w":"passive","p":"ˈpæsɪv","d":"a. 被动的；消极的","r":[]},{"i":426,"s":"高频","l":15,"w":"format","p":"ˈfɔːmæt","d":"n. 形式；版式；格式","r":[]},{"i":427,"s":"高频","l":15,"w":"inform","p":"ɪnˈfɔːm","d":"v. 通知；了解","r":[]},{"i":428,"s":"高频","l":15,"w":"reform","p":"rɪˈfɔːm","d":"vt. & n. 改良；改革","r":[]},{"i":429,"s":"高频","l":15,"w":"formulate","p":"ˈfɔːmjuleɪt","d":"vt. 规划；制定；确切表达","r":[]},{"i":430,"s":"高频","l":15,"w":"federal","p":"ˈfedərəl","d":"a. 联邦的；联盟的","r":[]},{"i":431,"s":"高频","l":15,"w":"extraordinary","p":"ɪkˈstrɔːdnri","d":"a. 非同寻常的","r":[]},{"i":432,"s":"高频","l":15,"w":"margin","p":"ˈmɑːdʒɪn","d":"n. 边缘；页边的空白","r":[]},{"i":433,"s":"高频","l":15,"w":"fluctuate","p":"ˈflʌktʃueɪt","d":"vi. 波动；起伏","r":[]},{"i":434,"s":"高频","l":15,"w":"fluid","p":"ˈfluːɪd","d":"n. 液体 a. 流动的","r":[["fluent","ˈfluːənt","a. 流利的；流畅的"]]},{"i":435,"s":"高频","l":15,"w":"suspend","p":"səˈspend","d":"vt. 推迟；使暂停；吊；悬","r":[]},{"i":436,"s":"高频","l":15,"w":"suspect","p":"səˈspekt","d":"vt. 怀疑 n. 嫌疑犯","r":[]},{"i":437,"s":"高频","l":15,"w":"temporary","p":"ˈtemprəri","d":"a. 暂时的；临时的","r":[]},{"i":438,"s":"高频","l":15,"w":"contemporary","p":"kənˈtemprəri","d":"a. 当代的；同时代的","r":[]},{"i":439,"s":"高频","l":15,"w":"tremble","p":"ˈtrembl","d":"vi. 发抖；战栗；焦虑 n. 颤抖","r":[]},{"i":440,"s":"高频","l":15,"w":"terminal","p":"ˈtɜːmɪnl","d":"a. 末端的；终点的；晚期的 n. 末端","r":[]},{"i":441,"s":"高频","l":15,"w":"majority","p":"məˈdʒɒrəti","d":"n. 多数；大多数","r":[]},{"i":442,"s":"高频","l":15,"w":"collapse","p":"kəˈlæps","d":"vi. & n. 倒塌；崩溃","r":[]},{"i":443,"s":"高频","l":15,"w":"colleague","p":"ˈkɒliːɡ","d":"n. 同事；同僚","r":[]},{"i":444,"s":"高频","l":15,"w":"collision","p":"kəˈlɪʒn","d":"n. 碰撞；冲突；抵触","r":[]},{"i":445,"s":"高频","l":15,"w":"comprise","p":"kəmˈpraɪz","d":"vt. 包含；包括；构成","r":[]},{"i":446,"s":"高频","l":15,"w":"compromise","p":"ˈkɒmprəmaɪz","d":"n. & v. 妥协；和解","r":[]},{"i":447,"s":"高频","l":15,"w":"compact","p":"kəmˈpækt","d":"a. 紧凑的；体积小的","r":[]},{"i":448,"s":"高频","l":15,"w":"commence","p":"kəˈmens","d":"v. 开始；着手","r":[]},{"i":449,"s":"高频","l":15,"w":"comply","p":"kəmˈplaɪ","d":"vi. 服从；顺从；遵从；遵守","r":[]},{"i":450,"s":"高频","l":15,"w":"concrete","p":"ˈkɒŋkriːt","d":"a. 实在的；具体的 n. 混凝土","r":[]},{"i":451,"s":"高频","l":16,"w":"condemn","p":"kənˈdem","d":"vt. 谴责；指责；判刑","r":[]},{"i":452,"s":"高频","l":16,"w":"contest","p":"ˈkɒntest; kənˈtest","d":"n. 竞赛 vt. 争取赢得","r":[]},{"i":453,"s":"高频","l":16,"w":"contract","p":"ˈkɒntrækt; kənˈtrækt","d":"n. 合同；契约 v. 缩小；感染","r":[]},{"i":454,"s":"高频","l":16,"w":"context","p":"ˈkɒntekst","d":"n. 上下文；背景；环境","r":[]},{"i":455,"s":"高频","l":16,"w":"conceal","p":"kənˈsiːl","d":"vt. 隐藏；隐瞒","r":[]},{"i":456,"s":"高频","l":16,"w":"condense","p":"kənˈdens","d":"vt. 使浓缩；简缩","r":[]},{"i":457,"s":"高频","l":16,"w":"confirm","p":"kənˈfɜːm","d":"vt. 确认；确定；批准","r":[]},{"i":458,"s":"高频","l":16,"w":"constitute","p":"ˈkɒnstɪtjuːt","d":"vt. 组成；构成；建立；制定","r":[]},{"i":459,"s":"高频","l":16,"w":"contact","p":"ˈkɒntækt","d":"n. & v. 接触；联系","r":[]},{"i":460,"s":"高频","l":16,"w":"convey","p":"kənˈveɪ","d":"vt. 表达；传送","r":[]},{"i":461,"s":"高频","l":16,"w":"convince","p":"kənˈvɪns","d":"vt. 使确信；使信服","r":[]},{"i":462,"s":"高频","l":16,"w":"conflict","p":"ˈkɒnflɪkt","d":"n. & v. 冲突；斗争","r":[]},{"i":463,"s":"高频","l":16,"w":"consolidate","p":"kənˈsɒlɪdeɪt","d":"v.（使）巩固；（使）强化；（使）合并","r":[]},{"i":464,"s":"高频","l":16,"w":"contaminate","p":"kənˈtæmɪneɪt","d":"vt. 污染；弄脏；腐蚀","r":[]},{"i":465,"s":"高频","l":16,"w":"council","p":"ˈkaʊnsl","d":"n. 理事会；委员会","r":[]},{"i":466,"s":"高频","l":16,"w":"coherence","p":"kəʊˈhɪərəns","d":"n. 一致；连贯性","r":[["coherent","kəʊˈhɪərənt","a. 合乎逻辑的；有条理的"]]},{"i":467,"s":"高频","l":16,"w":"conference","p":"ˈkɒnfərəns","d":"n. 会议；讨论会","r":[]},{"i":468,"s":"高频","l":16,"w":"conscience","p":"ˈkɒnʃəns","d":"n. 良心；道德心","r":[]},{"i":469,"s":"高频","l":16,"w":"existence","p":"ɪɡˈzɪstəns","d":"n. 存在；生活（方式）","r":[]},{"i":470,"s":"高频","l":16,"w":"compel","p":"kəmˈpel","d":"vt. 强迫；引起","r":[["compulsory","kəmˈpʌlsəri","a. 强制性的；必修的；义务的"]]},{"i":471,"s":"高频","l":16,"w":"expel","p":"ɪkˈspel","d":"v. 开除；驱逐出境","r":[]},{"i":472,"s":"高频","l":16,"w":"appeal","p":"əˈpiːl","d":"vi. & n. 呼吁；上诉；吸引力","r":[]},{"i":473,"s":"高频","l":16,"w":"counsel","p":"ˈkaʊnsl","d":"n. 建议；劝告；法律顾问 vt. 劝告；建议","r":[]},{"i":474,"s":"高频","l":16,"w":"consult","p":"kənˈsʌlt","d":"v. 咨询；请教；协商 vt. 查阅","r":[["consultant","kənˈsʌltənt","n. 顾问"]]},{"i":475,"s":"高频","l":16,"w":"category","p":"ˈkætəɡəri","d":"n. 种类；类别；范畴","r":[]},{"i":476,"s":"高频","l":16,"w":"combat","p":"ˈkɒmbæt","d":"n. & v. 搏斗；战斗","r":[]},{"i":477,"s":"高频","l":16,"w":"compress","p":"kəmˈpres","d":"v. 压缩 vt. 精简","r":[]},{"i":478,"s":"高频","l":16,"w":"depress","p":"dɪˈpres","d":"v. 使沮丧；使萧条","r":[["depression","dɪˈpreʃn","n. 抑郁；萧条期"]]},{"i":479,"s":"高频","l":16,"w":"annual","p":"ˈænjuəl","d":"a. 每年的；年度的 n. 年刊","r":[]},{"i":480,"s":"高频","l":16,"w":"section","p":"ˈsekʃn","d":"n. 部门；部分；一段","r":[["segment","ˈseɡmənt; seɡˈment","n. 部分；段 vt. 分割"]]},{"i":481,"s":"高频","l":17,"w":"liberate","p":"ˈlɪbəreɪt","d":"vt. 解放；释放","r":[["liberty","ˈlɪbəti","n. 自由"]]},{"i":482,"s":"高频","l":17,"w":"deliver","p":"dɪˈlɪvə(r)","d":"vt. 递送；发表；分娩；接生","r":[]},{"i":483,"s":"高频","l":17,"w":"contradict","p":"ˌkɒntrəˈdɪkt","d":"vt. 反驳；与……矛盾","r":[]},{"i":484,"s":"高频","l":17,"w":"contrary","p":"ˈkɒntrəri","d":"a. 相反的；对立的 n. 相反","r":[]},{"i":485,"s":"高频","l":17,"w":"contrast","p":"ˈkɒntrɑːst","d":"n. 对比；对照；差异","r":[]},{"i":486,"s":"高频","l":17,"w":"controversy","p":"ˈkɒntrəvɜːsi","d":"n. 争论；辩论","r":[]},{"i":487,"s":"高频","l":17,"w":"reproduce","p":"ˌriːprəˈdjuːs","d":"v. 繁殖；生殖 vt. 复制；使再生","r":[]},{"i":488,"s":"高频","l":17,"w":"transmission","p":"trænsˈmɪʃn","d":"n. 传递；传播","r":[]},{"i":489,"s":"高频","l":17,"w":"mission","p":"ˈmɪʃn","d":"n. 任务；使命；使团","r":[]},{"i":490,"s":"高频","l":17,"w":"commission","p":"kəˈmɪʃn","d":"n. 委员会；佣金","r":[]},{"i":491,"s":"高频","l":17,"w":"omit","p":"əˈmɪt","d":"vt. 省略；删掉；遗漏","r":[]},{"i":492,"s":"高频","l":17,"w":"dismiss","p":"dɪsˈmɪs","d":"vt. 解雇；遣散；解散；驳回","r":[]},{"i":493,"s":"高频","l":17,"w":"commit","p":"kəˈmɪt","d":"v. 犯罪；承诺","r":[]},{"i":494,"s":"高频","l":17,"w":"committee","p":"kəˈmɪti","d":"n. 委员会；全体委员","r":[]},{"i":495,"s":"高频","l":17,"w":"settlement","p":"ˈsetlmənt","d":"n. 和解；偿清；协议","r":[]},{"i":496,"s":"高频","l":17,"w":"supplement","p":"ˈsʌplɪmənt","d":"n. 补充；增补；补充物","r":[]},{"i":497,"s":"高频","l":17,"w":"installment","p":"ɪnˈstɔːlmənt","d":"n. 分期付款","r":[]},{"i":498,"s":"高频","l":17,"w":"conduct","p":"kənˈdʌkt; ˈkɒndʌkt","d":"v. 组织；指挥；引导 n. 行为举止","r":[]},{"i":499,"s":"高频","l":17,"w":"shortage","p":"ˈʃɔːtɪdʒ","d":"n. 不足；缺少；缺乏","r":[]},{"i":500,"s":"高频","l":17,"w":"drain","p":"dreɪn","d":"v. 流光；排空 n. 下水道；排水管","r":[["drainage","ˈdreɪnɪdʒ","n. 排水；排水系统"]]},{"i":501,"s":"高频","l":17,"w":"beverage","p":"ˈbevərɪdʒ","d":"n. 饮料","r":[]},{"i":502,"s":"高频","l":17,"w":"arbitrary","p":"ˈɑːbɪtrəri","d":"a. 随意的；专横的","r":[]},{"i":503,"s":"高频","l":17,"w":"boundary","p":"ˈbaʊndri","d":"n. 分界线；边界","r":[]},{"i":504,"s":"高频","l":17,"w":"elementary","p":"ˌelɪˈmentri","d":"a. 基本的；初级的","r":[]},{"i":505,"s":"高频","l":17,"w":"monetary","p":"ˈmʌnɪtri","d":"a. 货币的；金融的","r":[]},{"i":506,"s":"高频","l":17,"w":"voluntary","p":"ˈvɒlənt(ə)ri","d":"a. 自愿的；志愿的","r":[]},{"i":507,"s":"高频","l":17,"w":"acute","p":"əˈkjuːt","d":"a. 十分严重的；急性的；灵敏的","r":[]},{"i":508,"s":"高频","l":17,"w":"hospitable","p":"hɒˈspɪtəbl","d":"a. 好客的；适宜的","r":[]},{"i":509,"s":"高频","l":17,"w":"injection","p":"ɪnˈdʒekʃn","d":"n. 注射；注入","r":[]},{"i":510,"s":"高频","l":17,"w":"reject","p":"rɪˈdʒekt","d":"vt. 拒绝；丢弃","r":[]},{"i":511,"s":"高频","l":18,"w":"catalogue","p":"ˈkætəlɒɡ","d":"（亦作 catalog）n. 目录；目录册","r":[]},{"i":512,"s":"高频","l":18,"w":"sponsor","p":"ˈspɒnsə(r)","d":"n. 赞助商 vt. 赞助","r":[]},{"i":513,"s":"高频","l":18,"w":"correspond","p":"ˌkɒrəˈspɒnd","d":"vi. 相符合；一致；通信","r":[["corresponding","ˌkɒrəˈspɒndɪŋ","a. 符合的；相应的"]]},{"i":514,"s":"高频","l":18,"w":"decade","p":"ˈdekeɪd","d":"n. 十年","r":[]},{"i":515,"s":"高频","l":18,"w":"aggressive","p":"əˈɡresɪv","d":"a. 有进取心的；挑衅的；侵略的","r":[]},{"i":516,"s":"高频","l":18,"w":"congress","p":"ˈkɒŋɡres","d":"n. 代表大会；国会；议会","r":[]},{"i":517,"s":"高频","l":18,"w":"resign","p":"rɪˈzaɪn","d":"v. 辞职","r":[]},{"i":518,"s":"高频","l":18,"w":"mount","p":"maʊnt","d":"vt. 登上 vi. 增加","r":[]},{"i":519,"s":"高频","l":18,"w":"sacrifice","p":"ˈsækrɪfaɪs","d":"vt. 牺牲；祭献 n. 牺牲；祭品","r":[]},{"i":520,"s":"高频","l":18,"w":"accord","p":"əˈkɔːd","d":"vi. 符合；配合 vt. 给予 n. 协议；条约","r":[["accordance","əˈkɔːdns","n. 一致；按照"],["accordingly","əˈkɔːdŋli","ad. 相应地；照着；因此"]]},{"i":521,"s":"高频","l":18,"w":"enthusiasm","p":"ɪnˈθjuːziæzəm","d":"n. 热情","r":[["enthusiastic","ɪnˌθjuːziˈæstɪk","a. 热情的"]]},{"i":522,"s":"高频","l":18,"w":"logic","p":"ˈlɒdʒɪk","d":"n. 逻辑","r":[["logical","ˈlɒdʒɪkl","a. 符合逻辑的；符合情理的"]]},{"i":523,"s":"高频","l":18,"w":"embrace","p":"ɪmˈbreɪs","d":"v. 拥抱；包括","r":[]},{"i":524,"s":"高频","l":18,"w":"emphasize","p":"ˈemfəsaɪz","d":"vt. 强调；着重","r":[]},{"i":525,"s":"高频","l":18,"w":"encounter","p":"ɪnˈkaʊntə(r)","d":"vt. & n. 遭遇；遇到","r":[]},{"i":526,"s":"高频","l":18,"w":"endure","p":"ɪnˈdjʊə(r)","d":"v. 忍受；容忍","r":[]},{"i":527,"s":"高频","l":18,"w":"enforce","p":"ɪnˈfɔːs","d":"vt. 强制实施；强制执行；强迫","r":[]},{"i":528,"s":"高频","l":18,"w":"engage","p":"ɪnˈɡeɪdʒ","d":"vi. 从事 vt. 吸引；聘用；交战","r":[]},{"i":529,"s":"高频","l":18,"w":"entitle","p":"ɪnˈtaɪtl","d":"vt. 给……权利；有资格","r":[]},{"i":530,"s":"高频","l":18,"w":"envy","p":"ˈenvi","d":"v. & n. 嫉妒；羡慕","r":[]},{"i":531,"s":"高频","l":18,"w":"entry","p":"ˈentri","d":"n. 入口处；登记；进入；条目","r":[]},{"i":532,"s":"高频","l":18,"w":"enlighten","p":"ɪnˈlaɪtn","d":"vt. 启发；启迪；开导","r":[]},{"i":533,"s":"高频","l":18,"w":"enroll","p":"ɪnˈrəʊl","d":"（亦作 enrol）v. 注册；登记；加入","r":[]},{"i":534,"s":"高频","l":18,"w":"property","p":"ˈprɒpəti","d":"n. 财产，资产；性质","r":[]},{"i":535,"s":"高频","l":18,"w":"feasible","p":"ˈfiːzəbl","d":"a. 可行的","r":[]},{"i":536,"s":"高频","l":18,"w":"tangible","p":"ˈtændʒəbl","d":"a. 有形的；实际的；可触摸的","r":[]},{"i":537,"s":"高频","l":18,"w":"intangible","p":"ɪnˈtændʒəbl","d":"a. 无形的；难以形容的","r":[]},{"i":538,"s":"高频","l":18,"w":"administer","p":"ədˈmɪnɪstə(r)","d":"vt. 管理；执行","r":[]},{"i":539,"s":"高频","l":18,"w":"advocate","p":"ˈædvəkeɪt","d":"vt. 主张；提倡 n. 拥护者","r":[]},{"i":540,"s":"高频","l":19,"w":"accumulate","p":"əˈkjuːmjəleɪt","d":"vt. 积累；积攒","r":[]},{"i":541,"s":"高频","l":19,"w":"acquaint","p":"əˈkweɪnt","d":"vt. 使熟悉；使了解","r":[["acquaintance","əˈkweɪntəns","n. 熟人"]]},{"i":542,"s":"高频","l":19,"w":"accuse","p":"əˈkjuːz","d":"vt. 控告；指控；谴责","r":[]},{"i":543,"s":"高频","l":19,"w":"appetite","p":"ˈæpɪtaɪt","d":"n. 食欲；胃口；欲望","r":[]},{"i":544,"s":"高频","l":19,"w":"approximate","p":"əˈprɒksɪmət","d":"a. 近似的","r":[]},{"i":545,"s":"高频","l":19,"w":"acknowledge","p":"əkˈnɒlɪdʒ","d":"n. 承认；感谢","r":[]},{"i":546,"s":"高频","l":19,"w":"approach","p":"əˈprəʊtʃ","d":"v. 接近 n. 方法","r":[]},{"i":547,"s":"高频","l":19,"w":"attribute","p":"əˈtrɪbjuːt","d":"vt. 把……归因于 n. 属性","r":[]},{"i":548,"s":"高频","l":19,"w":"arrest","p":"əˈrest","d":"vt. & n. 逮捕","r":[]},{"i":549,"s":"高频","l":19,"w":"annoy","p":"əˈnɔɪ","d":"v. 使恼怒；使生气","r":[]},{"i":550,"s":"高频","l":19,"w":"asset","p":"ˈæset","d":"n. 资产；有用的人或物","r":[]},{"i":551,"s":"高频","l":19,"w":"evident","p":"ˈevɪdənt","d":"a. 明显的；显著的","r":[["evidence","ˈevɪdəns","n. 证据；证明"]]},{"i":552,"s":"高频","l":19,"w":"visible","p":"ˈvɪzəbl","d":"a. 可见的","r":[["invisible","ɪnˈvɪzəbl","a. 看不见的"],["vision","ˈvɪʒn","n. 视力；视野"]]},{"i":553,"s":"高频","l":19,"w":"devise","p":"dɪˈvaɪz","d":"vt. 发明；设计；想出","r":[]},{"i":554,"s":"高频","l":19,"w":"revise","p":"rɪˈvaɪz","d":"vt. 修订；校订 vi. 复习功课","r":[]},{"i":555,"s":"高频","l":19,"w":"witness","p":"ˈwɪtnəs","d":"n. 目击者；证人 vt. 目击","r":[]},{"i":556,"s":"高频","l":19,"w":"summit","p":"ˈsʌmɪt","d":"n. 最高点；首脑会议；峰会；顶峰","r":[]},{"i":557,"s":"高频","l":19,"w":"assume","p":"əˈsjuːm","d":"vt. 假定；承担；呈现","r":[]},{"i":558,"s":"高频","l":19,"w":"democracy","p":"dɪˈmɒkrəsi","d":"n. 民主；民主政体","r":[["democratic","ˌdeməˈkrætɪk","a. 民主的"]]},{"i":559,"s":"高频","l":19,"w":"ultimate","p":"ˈʌltɪmət","d":"a. 最后的；最终的；终极的","r":[]},{"i":560,"s":"高频","l":19,"w":"disturb","p":"dɪˈstɜːb","d":"vt. 扰乱；打扰；妨碍；使不安","r":[]},{"i":561,"s":"高频","l":19,"w":"frontier","p":"ˈfrʌntɪə(r)","d":"n. 边境；边疆；边界；前沿","r":[]},{"i":562,"s":"高频","l":19,"w":"confront","p":"kənˈfrʌnt","d":"vt. 使面对；对抗；遭遇","r":[]},{"i":563,"s":"高频","l":19,"w":"withdraw","p":"wɪðˈdrɔː","d":"v. 撤回；退出 vt. 收回；取","r":[]},{"i":564,"s":"高频","l":19,"w":"withstand","p":"wɪðˈstænd","d":"vt. 抵抗；承受","r":[]},{"i":565,"s":"高频","l":19,"w":"evolution","p":"ˌiːvəˈluːʃn","d":"n. 进化；演化；发展","r":[]},{"i":566,"s":"高频","l":19,"w":"volume","p":"ˈvɒljuːm","d":"n. 卷；册；量；体积；音量","r":[]},{"i":567,"s":"高频","l":19,"w":"revolution","p":"ˌrevəˈluːʃn","d":"n. 革命；旋转","r":[]},{"i":568,"s":"高频","l":19,"w":"circumstance","p":"ˈsɜːkəmstəns","d":"n. 条件；环境；状况","r":[]},{"i":569,"s":"高频","l":19,"w":"opponent","p":"əˈpəʊnənt","d":"n. 对手；敌手；对抗者","r":[]},{"i":570,"s":"高频","l":20,"w":"oppose","p":"əˈpəʊz","d":"vt. 反对；反抗","r":[]},{"i":571,"s":"高频","l":20,"w":"synthetic","p":"sɪnˈθetɪk","d":"a. 综合的；合成的；人造的","r":[]},{"i":572,"s":"高频","l":20,"w":"symptom","p":"ˈsɪmptəm","d":"n. 症状；征兆","r":[]},{"i":573,"s":"高频","l":20,"w":"resemble","p":"rɪˈzembl","d":"vt. 像；类似","r":[]},{"i":574,"s":"高频","l":20,"w":"assemble","p":"əˈsembl","d":"v. 集合；召集 vt. 装配","r":[]},{"i":575,"s":"高频","l":20,"w":"capacity","p":"kəˈpæsəti","d":"n. 容量；能力","r":[]},{"i":576,"s":"高频","l":20,"w":"static","p":"ˈstætɪk","d":"a. 静止的；静态的 n. 静电","r":[]},{"i":577,"s":"高频","l":20,"w":"status","p":"ˈsteɪtəs","d":"n. 地位；身份；状况","r":[]},{"i":578,"s":"高频","l":20,"w":"stadium","p":"ˈsteɪdiəm","d":"n. 体育场；运动场","r":[]},{"i":579,"s":"高频","l":20,"w":"statistic","p":"stəˈtɪstɪk","d":"n. 统计数据 (statistics) 统计学","r":[]},{"i":580,"s":"高频","l":20,"w":"estate","p":"ɪˈsteɪt","d":"n. 庄园；地产；财产；遗产","r":[]},{"i":581,"s":"高频","l":20,"w":"instance","p":"ˈɪnstəns","d":"n. 例子；实例；事例","r":[]},{"i":582,"s":"高频","l":20,"w":"insist","p":"ɪnˈsɪst","d":"v. 坚持；坚持要求","r":[]},{"i":583,"s":"高频","l":20,"w":"consist","p":"kənˈsɪst","d":"v. 由...组成","r":[]},{"i":584,"s":"高频","l":20,"w":"resist","p":"rɪˈzɪst","d":"v. 抵抗；反抗","r":[["resistance","rɪˈzɪstəns","n. 反对；抵抗"],["resistant","rɪˈzɪstənt","a. 抵抗的；抗...的"]]},{"i":585,"s":"高频","l":20,"w":"sightseeing","p":"ˈsaɪtsiːɪŋ","d":"n. 观光；游览","r":[]},{"i":586,"s":"高频","l":20,"w":"surrounding","p":"səˈraʊndɪŋ","d":"a. 周围的","r":[]},{"i":587,"s":"高频","l":20,"w":"calculating","p":"ˈkælkjuleɪtɪŋ","d":"a. 精明的；有心计的；精于算计的","r":[]},{"i":588,"s":"高频","l":20,"w":"imposing","p":"ɪmˈpəʊzɪŋ","d":"a. 令人印象深刻的；壮观的","r":[]},{"i":589,"s":"高频","l":20,"w":"regarding","p":"rɪˈɡɑːdɪŋ","d":"prep. 关于","r":[]},{"i":590,"s":"高频","l":20,"w":"concerning","p":"kənˈsɜːnɪŋ","d":"prep. 关于；涉及","r":[]},{"i":591,"s":"高频","l":20,"w":"sophisticated","p":"səˈfɪstɪkeɪtɪd","d":"a. 久经世故的；高级的；复杂的","r":[]},{"i":592,"s":"高频","l":20,"w":"advanced","p":"ədˈvɑːnst","d":"a. 先进的；高等的；高级的；年老的","r":[]},{"i":593,"s":"高频","l":20,"w":"steady","p":"ˈstedi","d":"a. 稳定的；稳固的","r":[]},{"i":594,"s":"高频","l":20,"w":"sticky","p":"ˈstɪki","d":"a. 黏性的；棘手的","r":[]},{"i":595,"s":"高频","l":20,"w":"guilty","p":"ˈɡɪlti","d":"a. 有罪的；内疚的","r":[]},{"i":596,"s":"高频","l":20,"w":"greedy","p":"ˈɡriːdi","d":"a. 贪婪的；贪吃的","r":[]},{"i":597,"s":"高频","l":20,"w":"rational","p":"ˈræʃnəl","d":"a. 合理的；理性的","r":[["irrational","ɪˈræʃnəl","a. 不合理的"]]},{"i":598,"s":"高频","l":20,"w":"faulty","p":"ˈfɔːlti","d":"a. 有错误的；有缺点的","r":[]},{"i":599,"s":"高频","l":20,"w":"slippery","p":"ˈslɪpəri","d":"a. 滑的；油滑的","r":[]},{"i":600,"s":"高频","l":21,"w":"dictate","p":"dɪkˈteɪt","d":"vt. 口述；命令；使听写 n. 命令；规定","r":[["dictation","dɪkˈteɪʃn","n. 听写；口述"]]},{"i":601,"s":"高频","l":21,"w":"predict","p":"prɪˈdɪkt","d":"v. 预测；预言","r":[]},{"i":602,"s":"高频","l":21,"w":"initiate","p":"ɪˈnɪʃieɪt","d":"v. 开始；发起","r":[["initial","ɪˈnɪʃl","a. 最初的；开始的"],["initiative","ɪˈnɪʃətɪv","n. 倡议；自发性；主动性"]]},{"i":603,"s":"高频","l":21,"w":"ambition","p":"æmˈbɪʃn","d":"n. 野心；志向","r":[]},{"i":604,"s":"高频","l":21,"w":"veteran","p":"ˈvetərən","d":"n. 老兵；老手","r":[]},{"i":605,"s":"高频","l":21,"w":"fate","p":"feɪt","d":"n. 命运","r":[]},{"i":606,"s":"高频","l":21,"w":"fatal","p":"ˈfeɪtl","d":"a. 致命的；灾难性的","r":[]},{"i":607,"s":"高频","l":21,"w":"flame","p":"fleɪm","d":"n. 火焰；热情 vi. 燃烧；发怒","r":[]},{"i":608,"s":"高频","l":21,"w":"phenomenon","p":"fəˈnɒmɪnən","d":"（pl. phenomena）n. 现象","r":[]},{"i":609,"s":"高频","l":21,"w":"foundation","p":"faʊnˈdeɪʃn","d":"n. 基础；地基；基金会","r":[]},{"i":610,"s":"高频","l":21,"w":"fund","p":"fʌnd","d":"n. 基金；资金","r":[["fundamental","ˌfʌndəˈmentl","a. 基础的；基本的；根本的"]]},{"i":611,"s":"高频","l":21,"w":"alternative","p":"ɔːlˈtɜːnətɪv","d":"a. 供选择的；可替代的 n. 可供选择的事物","r":[]},{"i":612,"s":"高频","l":21,"w":"underline","p":"ˌʌndəˈlaɪn","d":"vt. 强调；在……下划线","r":[]},{"i":613,"s":"高频","l":21,"w":"undergo","p":"ˌʌndəˈɡəʊ","d":"v. 经历；遭受","r":[]},{"i":614,"s":"高频","l":21,"w":"undertake","p":"ˌʌndəˈteɪk","d":"v. 承担；从事；承诺","r":[]},{"i":615,"s":"高频","l":21,"w":"jury","p":"ˈdʒʊəri","d":"n. 陪审团；评委会","r":[]},{"i":616,"s":"高频","l":21,"w":"injure","p":"ˈɪndʒə(r)","d":"vt. 伤害；损害；损伤","r":[["injury","ˈɪndʒəri","n. 伤害；损伤"]]},{"i":617,"s":"高频","l":21,"w":"rigid","p":"ˈrɪdʒɪd","d":"a. 严格的；僵硬的；刚硬的","r":[]},{"i":618,"s":"高频","l":21,"w":"valid","p":"ˈvælɪd","d":"a. 有效的；正当的","r":[]},{"i":619,"s":"高频","l":21,"w":"acid","p":"ˈæsɪd","d":"a. 酸的；酸性的 n. 酸","r":[]},{"i":620,"s":"高频","l":21,"w":"splendid","p":"ˈsplendɪd","d":"a. 辉煌的；极佳的；壮丽的；豪华的","r":[]},{"i":621,"s":"高频","l":21,"w":"compatible","p":"kəmˈpætəbl","d":"a. 兼容的；和睦共处的；志趣相投的","r":[]},{"i":622,"s":"高频","l":21,"w":"neutral","p":"ˈnjuːtrəl","d":"a. 中立的；中性的","r":[]},{"i":623,"s":"高频","l":21,"w":"conventional","p":"kənˈvenʃənl","d":"a. 传统的；依照惯例的","r":[]},{"i":624,"s":"高频","l":21,"w":"typical","p":"ˈtɪpɪkl","d":"a. 典型的","r":[]},{"i":625,"s":"高频","l":21,"w":"arrival","p":"əˈraɪvl","d":"n. 抵达；到来；到货","r":[]},{"i":626,"s":"高频","l":21,"w":"proof","p":"pruːf","d":"n. 证明 a. 防...的","r":[["waterproof","ˈwɔːtəpruːf","a. 防水的"]]},{"i":627,"s":"高频","l":21,"w":"reputation","p":"ˌrepjuˈteɪʃn","d":"n. 名誉；名声","r":[]},{"i":628,"s":"高频","l":21,"w":"resolution","p":"ˌrezəˈluːʃn","d":"n. 决议；决心；解决","r":[["resolve","rɪˈzɒlv","v. 解决；决心"]]},{"i":629,"s":"高频","l":21,"w":"temptation","p":"tempˈteɪʃn","d":"n. 诱惑；引诱","r":[]},{"i":630,"s":"高频","l":22,"w":"vocation","p":"vəʊˈkeɪʃn","d":"n. 职业；行业；使命感","r":[]},{"i":631,"s":"高频","l":22,"w":"cooperation","p":"kəʊˌɒpəˈreɪʃn","d":"n. 合作；协助","r":[]},{"i":632,"s":"高频","l":22,"w":"frustration","p":"frʌˈstreɪʃn","d":"n. 挫折；失败；沮丧","r":[]},{"i":633,"s":"高频","l":22,"w":"pension","p":"ˈpenʃn","d":"n. 养老金；退休金；抚恤金 vt. 给予……养老金","r":[]},{"i":634,"s":"高频","l":22,"w":"institution","p":"ˌɪnstɪˈtjuːʃn","d":"n. 机构；制度；习俗","r":[]},{"i":635,"s":"高频","l":22,"w":"cohesion","p":"kəʊˈhiːʒn","d":"n. 结合；凝聚性；内聚力","r":[]},{"i":636,"s":"高频","l":22,"w":"conjunction","p":"kənˈdʒʌŋkʃn","d":"n. 连接词；结合","r":[]},{"i":637,"s":"高频","l":22,"w":"convention","p":"kənˈvenʃn","d":"n. 习俗；惯例；大会；公约","r":[]},{"i":638,"s":"高频","l":22,"w":"constitution","p":"ˌkɒnstɪˈtjuːʃn","d":"n. 宪法；章程；体质；构造","r":[]},{"i":639,"s":"高频","l":22,"w":"consumption","p":"kənˈsʌmpʃn","d":"n. 消耗；消费","r":[]},{"i":640,"s":"高频","l":22,"w":"combination","p":"ˌkɒmbɪˈneɪʃn","d":"n. 组合；联合；合并","r":[]},{"i":641,"s":"高频","l":22,"w":"submit","p":"səbˈmɪt","d":"vt. 呈递；提交 v. 服从","r":[]},{"i":642,"s":"高频","l":22,"w":"substantial","p":"səbˈstænʃl","d":"a. 大量的；坚固的","r":[]},{"i":643,"s":"高频","l":22,"w":"substitute","p":"ˈsʌbstɪtjuːt","d":"n. 代替人；替代品 v. 用……代替","r":[]},{"i":644,"s":"高频","l":22,"w":"substance","p":"ˈsʌbstəns","d":"n. 物质；实质","r":[]},{"i":645,"s":"高频","l":22,"w":"subject","p":"ˈsʌbdʒɪkt","d":"n. 主题；学科；实验对象 a. 可能受...的影响 v. 使臣服；使顺从","r":[]},{"i":646,"s":"高频","l":22,"w":"lessen","p":"ˈlesn","d":"v. 减少；减轻","r":[]},{"i":647,"s":"高频","l":22,"w":"strengthen","p":"ˈstreŋθn","d":"v. 加强；增强","r":[]},{"i":648,"s":"高频","l":22,"w":"broaden","p":"ˈbrɔːdn","d":"v. （使）变宽；（使）扩大","r":[]},{"i":649,"s":"高频","l":22,"w":"maiden","p":"ˈmeɪdn","d":"n. 少女；姑娘","r":[]},{"i":650,"s":"高频","l":22,"w":"submarine","p":"ˌsʌbməˈriːn","d":"a. 水下的；海底的 n. 潜水艇","r":[]},{"i":651,"s":"高频","l":22,"w":"submerge","p":"səbˈmɜːdʒ","d":"v. 淹没；潜入水中","r":[]},{"i":652,"s":"高频","l":22,"w":"conquer","p":"ˈkɒŋkə(r)","d":"v. 征服；克服","r":[["conquest","ˈkɒŋkwest","n. 征服；克服"]]},{"i":653,"s":"高频","l":22,"w":"threaten","p":"ˈθretn","d":"vt. 威胁；恐吓","r":[]},{"i":654,"s":"高频","l":22,"w":"fasten","p":"ˈfɑːsn","d":"v. 系牢；扎牢","r":[]},{"i":655,"s":"高频","l":22,"w":"enquire","p":"ɪnˈkwaɪə(r)","d":"（亦作 inquire）v. 询问；打听；调查","r":[["enquiry","ɪnˈkwaɪəri","（亦作 inquiry）n. 询问；调查；探索"]]},{"i":656,"s":"高频","l":22,"w":"essence","p":"ˈesns","d":"n. 本质；实质；精髓","r":[["essential","ɪˈsenʃl","a. 基本的；必要的；极其重要的"]]},{"i":657,"s":"高频","l":22,"w":"permanent","p":"ˈpɜːmənənt","d":"a. 永久的；长久的","r":[]},{"i":658,"s":"高频","l":22,"w":"persist","p":"pəˈsɪst","d":"vi. 坚持；执意","r":[]},{"i":659,"s":"高频","l":23,"w":"persuade","p":"pəˈsweɪd","d":"vt. 劝说；说服","r":[]},{"i":660,"s":"高频","l":23,"w":"persevere","p":"ˌpɜːsɪˈvɪə(r)","d":"vi. 坚持","r":[["perseverance","ˌpɜːsɪˈvɪərəns","n. 毅力；韧性"]]},{"i":661,"s":"高频","l":23,"w":"preserve","p":"prɪˈzɜːv","d":"vt. 保护；维持；保存","r":[]},{"i":662,"s":"高频","l":23,"w":"reserve","p":"rɪˈzɜːv","d":"v. 预定；保留","r":[]},{"i":663,"s":"高频","l":23,"w":"deserve","p":"dɪˈzɜːv","d":"v. 值得；应受","r":[]},{"i":664,"s":"高频","l":23,"w":"observe","p":"əbˈzɜːv","d":"v. 观察；看到","r":[]},{"i":665,"s":"高频","l":23,"w":"conserve","p":"kənˈsɜːv","d":"v. 节约；保护","r":[["conservative","kənˈsɜːvətɪv","a. 保守的 n. 保守的人；保守党"]]},{"i":666,"s":"高频","l":23,"w":"mislead","p":"ˌmɪsˈliːd","d":"vt. 误导","r":[]},{"i":667,"s":"高频","l":23,"w":"criticize","p":"ˈkrɪtɪsaɪz","d":"v. 批评；指责 vt. 评论","r":[["criticism","ˈkrɪtɪsɪzəm","n. 批评；评论"],["critical","ˈkrɪtɪkl","a. 批判的；极其重要的"]]},{"i":668,"s":"高频","l":23,"w":"crisis","p":"ˈkraɪsɪs","d":"（复数 crises）n. 危机；危难时刻","r":[]},{"i":669,"s":"高频","l":23,"w":"criterion","p":"kraɪˈtɪəriən","d":"（复数 criteria）n. 标准","r":[]},{"i":670,"s":"高频","l":23,"w":"casual","p":"ˈkæʒuəl","d":"a. 漫不经心的；非正式的；偶然的","r":[]},{"i":671,"s":"高频","l":23,"w":"indifferent","p":"ɪnˈdɪfrənt","d":"a. 漠不关心的","r":[]},{"i":672,"s":"高频","l":23,"w":"dissolve","p":"dɪˈzɒlv","d":"v. 使溶解；解除；消除","r":[]},{"i":673,"s":"高频","l":23,"w":"awesome","p":"ˈɔːsəm","d":"a. 令人惊叹的；很好的","r":[]},{"i":674,"s":"高频","l":23,"w":"modest","p":"ˈmɒdɪst","d":"a. 谦虚的；适中的；朴素的","r":[]},{"i":675,"s":"高频","l":23,"w":"moderate","p":"ˈmɒdərət","d":"a. 适中的；温和的 v. 缓和","r":[]},{"i":676,"s":"高频","l":23,"w":"commodity","p":"kəˈmɒdəti","d":"n. 商品；有用之物","r":[]},{"i":677,"s":"高频","l":23,"w":"accommodate","p":"əˈkɒmədeɪt","d":"v. 提供住宿；容纳","r":[["accommodation","əˌkɒməˈdeɪʃn","n. 住处；住宿"]]},{"i":678,"s":"高频","l":23,"w":"miracle","p":"ˈmɪrəkl","d":"n. 奇迹","r":[]},{"i":679,"s":"高频","l":23,"w":"marvel","p":"ˈmɑːvl","d":"n. 奇迹 v. 感到惊叹","r":[["marvelous","ˈmɑːvələs","a. 不可思议的"]]},{"i":680,"s":"高频","l":23,"w":"sew","p":"səʊ","d":"v. 缝制；缝纫","r":[]},{"i":681,"s":"高频","l":23,"w":"pilot","p":"ˈpaɪlət","d":"n. 飞行员 vt. 驾驶 a. 试验性的；试点的","r":[]},{"i":682,"s":"高频","l":23,"w":"label","p":"ˈleɪbl","d":"n. 标签；标记 vt. 贴标签于...","r":[]},{"i":683,"s":"高频","l":23,"w":"blend","p":"blend","d":"v. 混合；融合 n. 混合体","r":[]},{"i":684,"s":"高频","l":23,"w":"pitch","p":"pɪtʃ","d":"n. 球场；音调 v. 投；掷","r":[]},{"i":685,"s":"高频","l":23,"w":"tame","p":"teɪm","d":"a. 驯服的；温顺的 vt. 驯养；驯服","r":[]},{"i":686,"s":"高频","l":23,"w":"pray","p":"preɪ","d":"v. 祈求；祈祷","r":[]},{"i":687,"s":"高频","l":23,"w":"claim","p":"kleɪm","d":"vt. & n. 要求；索取；声称","r":[]},{"i":688,"s":"高频","l":23,"w":"digest","p":"daɪˈdʒest","d":"v. 消化 vt. 领会 n. 摘要；文摘","r":[]},{"i":689,"s":"高频","l":24,"w":"loan","p":"ləʊn","d":"n. 贷款；借出 vt. 借出","r":[]},{"i":690,"s":"高频","l":24,"w":"slender","p":"ˈslendə(r)","d":"a. 纤细的；苗条的","r":[]},{"i":691,"s":"高频","l":24,"w":"grave","p":"ɡreɪv","d":"n. 坟墓 a. 严重的；严肃的","r":[]},{"i":692,"s":"高频","l":24,"w":"grand","p":"ɡrænd","d":"a. 宏伟的；盛大的；总括的","r":[]},{"i":693,"s":"高频","l":24,"w":"chief","p":"tʃiːf","d":"a. 主要的；首席的","r":[]},{"i":694,"s":"高频","l":24,"w":"former","p":"ˈfɔːmə(r)","d":"a. 以前的；在前的","r":[["latter","ˈlætə(r)","a. 后者的；后面的"]]},{"i":695,"s":"高频","l":24,"w":"shift","p":"ʃɪft","d":"v. & n. 移动；改变","r":[]},{"i":696,"s":"高频","l":24,"w":"ceremony","p":"ˈserəməni","d":"n. 典礼；仪式","r":[]},{"i":697,"s":"高频","l":24,"w":"patch","p":"pætʃ","d":"n. 补丁；眼罩；小片 vt. 修补；缝补","r":[]},{"i":698,"s":"高频","l":24,"w":"steer","p":"stɪə(r)","d":"v. 驾驶 vt. 行驶；引导；控制","r":[]},{"i":699,"s":"高频","l":24,"w":"damp","p":"dæmp","d":"a. 潮湿的；微湿的 n. 潮湿；湿气","r":[]},{"i":700,"s":"高频","l":24,"w":"creep","p":"kriːp","d":"vi. 爬行；潜入","r":[]},{"i":701,"s":"高频","l":24,"w":"scratch","p":"skrætʃ","d":"v. & n. 搔；抓；划伤","r":[]},{"i":702,"s":"高频","l":24,"w":"seal","p":"siːl","d":"n. 密封；印章；海豹 vt. 密封","r":[]},{"i":703,"s":"高频","l":24,"w":"rent","p":"rent","d":"v. 租用 n. 租金","r":[]},{"i":704,"s":"高频","l":24,"w":"stir","p":"stɜː(r)","d":"vt. 搅拌；搅和；激起","r":[]},{"i":705,"s":"高频","l":24,"w":"blank","p":"blæŋk","d":"a. 空白的 n. 空白","r":[]},{"i":706,"s":"高频","l":24,"w":"whisper","p":"ˈwɪspə(r)","d":"n. 私语；谣传 v. 低语；私语","r":[]},{"i":707,"s":"高频","l":24,"w":"spill","p":"spɪl","d":"v. （使）溢出 vi. 蜂拥而出","r":[]},{"i":708,"s":"高频","l":24,"w":"float","p":"fləʊt","d":"v. 浮动；漂浮","r":[]},{"i":709,"s":"高频","l":24,"w":"plunge","p":"plʌndʒ","d":"v. 暴跌 n. 猛降","r":[]},{"i":710,"s":"高频","l":24,"w":"glimpse","p":"ɡlɪmps","d":"v. 瞥见 n. 一瞥","r":[]},{"i":711,"s":"高频","l":24,"w":"pack","p":"pæk","d":"v. 将……打包 n. （商品的）纸包；纸袋；纸盒","r":[]},{"i":712,"s":"高频","l":24,"w":"court","p":"kɔːt","d":"n. 法庭；球场；宫廷","r":[]},{"i":713,"s":"高频","l":24,"w":"pierce","p":"pɪəs","d":"v. 刺穿；穿透","r":[]},{"i":714,"s":"高频","l":24,"w":"thorough","p":"ˈθʌrə","d":"a. 彻底的；全面的","r":[]},{"i":715,"s":"高频","l":24,"w":"trial","p":"ˈtraɪəl","d":"n. 审讯；试验；考验","r":[]},{"i":716,"s":"高频","l":24,"w":"trail","p":"treɪl","d":"n. 痕迹；小径 v. 跟踪；拖；拉","r":[]},{"i":717,"s":"高频","l":24,"w":"recognize","p":"ˈrekəɡnaɪz","d":"v. 识别出；承认","r":[["recognition","ˌrekəɡˈnɪʃn","n. 认出；承认"]]},{"i":718,"s":"高频","l":24,"w":"loyal","p":"ˈlɔɪəl","d":"a. 忠诚的；忠心的","r":[["loyalty","ˈlɔɪəlti","n. 忠诚；忠实"]]},{"i":719,"s":"高频","l":25,"w":"dizzy","p":"ˈdɪzi","d":"a. 头晕目眩的；眩晕的","r":[]},{"i":720,"s":"高频","l":25,"w":"crash","p":"kræʃ","d":"v. & n. 碰撞；撞击","r":[]},{"i":721,"s":"高频","l":25,"w":"sincere","p":"sɪnˈsɪə(r)","d":"a. 真诚的；诚挚的；诚实的","r":[["sincerely","sɪnˈsɪəli","ad. 真诚地；诚实地"]]},{"i":722,"s":"高频","l":25,"w":"famine","p":"ˈfæmɪn","d":"n. 饥荒","r":[]},{"i":723,"s":"高频","l":25,"w":"choke","p":"tʃəʊk","d":"v. 窒息；阻塞","r":[]},{"i":724,"s":"高频","l":25,"w":"mineral","p":"ˈmɪnərəl","d":"n. 矿物；矿物质","r":[]},{"i":725,"s":"高频","l":25,"w":"favor","p":"ˈfeɪvə","d":"n. 帮助；赞同 v. 较喜欢；有助于","r":[]},{"i":726,"s":"高频","l":25,"w":"echo","p":"ˈekəʊ","d":"n. 回声；反响 vi. 发出回声","r":[]},{"i":727,"s":"高频","l":25,"w":"stretch","p":"stretʃ","d":"v. & n. 伸展；张开；延伸","r":[]},{"i":728,"s":"高频","l":25,"w":"glance","p":"ɡlɑːns","d":"n. 一瞥 vi. 瞥一眼；浏览","r":[]},{"i":729,"s":"高频","l":25,"w":"grant","p":"ɡrɑːnt","d":"vt. 授予；允许；承认 n. 拨款；补助金","r":[]},{"i":730,"s":"高频","l":25,"w":"pattern","p":"ˈpætn","d":"n. 模式；方式；范例；图案","r":[]},{"i":731,"s":"高频","l":25,"w":"poem","p":"ˈpəʊɪm","d":"n. 诗","r":[["poetry","ˈpəʊətri","n. 诗集；诗歌"],["poet","ˈpəʊɪt","n. 诗人"]]},{"i":732,"s":"高频","l":25,"w":"nuisance","p":"ˈnjuːsns","d":"n. 讨厌的人或行为；麻烦事","r":[]},{"i":733,"s":"高频","l":25,"w":"fancy","p":"ˈfænsi","d":"n. 幻想；想象力；喜欢；爱好","r":[]},{"i":734,"s":"高频","l":25,"w":"layout","p":"ˈleɪaʊt","d":"n. 布局；安排；设计","r":[]},{"i":735,"s":"高频","l":25,"w":"debt","p":"det","d":"n. 债务；欠款","r":[]},{"i":736,"s":"高频","l":25,"w":"shiver","p":"ˈʃɪvə(r)","d":"v. & n. 颤抖；哆嗦","r":[]},{"i":737,"s":"高频","l":25,"w":"brief","p":"briːf","d":"a. 简短的；简洁的；短暂的","r":[]},{"i":738,"s":"高频","l":25,"w":"organ","p":"ˈɔːɡən","d":"n. 器官；机构；管风琴","r":[]},{"i":739,"s":"高频","l":25,"w":"organic","p":"ɔːˈɡænɪk","d":"a. 有机的","r":[]},{"i":740,"s":"高频","l":25,"w":"board","p":"bɔːd","d":"n. 木板；董事会；伙食膳食 v. 上（船、车、飞机）；寄宿","r":[]},{"i":741,"s":"高频","l":25,"w":"switch","p":"swɪtʃ","d":"n. 开关；转换 v. 转变；改变；转换","r":[]},{"i":742,"s":"高频","l":25,"w":"formula","p":"ˈfɔːmjələ","d":"n. 公式；方程式；配方","r":[]},{"i":743,"s":"高频","l":25,"w":"world-wide","p":"wɜːldwaɪd","d":"a. 遍及全世界的","r":[]},{"i":744,"s":"高频","l":25,"w":"queue","p":"kjuː","d":"n. 队列 vi. 排队；排队等候","r":[]},{"i":745,"s":"高频","l":25,"w":"neglect","p":"nɪˈɡlekt","d":"n & v. 忽略；忽视","r":[]},{"i":746,"s":"高频","l":25,"w":"string","p":"strɪŋ","d":"n. 线；绳；一串 vt. 串起；悬挂","r":[]},{"i":747,"s":"高频","l":25,"w":"fuel","p":"ˈfjuːəl","d":"n. 燃料 v. 加油；加剧","r":[]},{"i":748,"s":"高频","l":26,"w":"steel","p":"stiːl","d":"n. 钢铁；钢","r":[]},{"i":749,"s":"高频","l":26,"w":"melt","p":"melt","d":"v. 使融化；使熔化","r":[]},{"i":750,"s":"高频","l":26,"w":"cope","p":"kəʊp","d":"vi. 应付；处理；对抗","r":[]},{"i":751,"s":"高频","l":26,"w":"keen","p":"kiːn","d":"a. 热衷的；强烈的；敏锐的；锋利的","r":[]},{"i":752,"s":"高频","l":26,"w":"tidy","p":"ˈtaɪdi","d":"a. 整洁的；整齐的 v. 整理；使整齐","r":[]},{"i":753,"s":"高频","l":26,"w":"balance","p":"ˈbæləns","d":"n. 平衡；余额 v. 保持平衡","r":[]},{"i":754,"s":"高频","l":26,"w":"utter","p":"ˈʌtə(r)","d":"a. 完全的；彻底的 vt. 说出；讲","r":[]},{"i":755,"s":"高频","l":26,"w":"vast","p":"vɑːst","d":"a. 巨大的；大量的；巨额的；广阔的","r":[]},{"i":756,"s":"高频","l":26,"w":"era","p":"ˈɪərə","d":"n. 时代；年代；纪元","r":[]},{"i":757,"s":"高频","l":26,"w":"scatter","p":"ˈskætə(r)","d":"vt. 撒播；撒 v. 驱散 n. 散落","r":[]},{"i":758,"s":"高频","l":26,"w":"tense","p":"tens","d":"a. 紧张的；紧绷的 v. 拉紧 n. 时态","r":[["tension","ˈtenʃn","n. 紧张；拉近；张力"]]},{"i":759,"s":"高频","l":26,"w":"intense","p":"ɪnˈtens","d":"a. 强烈的；剧烈的","r":[]},{"i":760,"s":"高频","l":26,"w":"intensive","p":"ɪnˈtensɪv","d":"a. 加强的；密集的","r":[]},{"i":761,"s":"高频","l":26,"w":"craft","p":"krɑːft","d":"n. 工艺；手艺；飞行器","r":[]},{"i":762,"s":"高频","l":26,"w":"spur","p":"spɜː(r)","d":"n. & v. 刺激；鼓舞","r":[]},{"i":763,"s":"高频","l":26,"w":"swear","p":"sweə(r)","d":"v. 发誓；宣誓；咒骂；说脏话","r":[]},{"i":764,"s":"高频","l":26,"w":"dash","p":"dæʃ","d":"vi. 猛冲 v. 使……破灭 n. 破折号；少量","r":[]},{"i":765,"s":"高频","l":26,"w":"harsh","p":"hɑːʃ","d":"a. 严厉的；恶劣的；粗糙的","r":[]},{"i":766,"s":"高频","l":26,"w":"hollow","p":"ˈhɒləʊ","d":"a. 空的；中空的；凹陷的；虚伪的","r":[]},{"i":767,"s":"高频","l":26,"w":"raw","p":"rɔː","d":"a. 生的；未加工的；原始的","r":[]},{"i":768,"s":"高频","l":26,"w":"strategy","p":"ˈstrætədʒi","d":"n. 战略；策略","r":[]},{"i":769,"s":"高频","l":26,"w":"coarse","p":"kɔːs","d":"a. 粗的；粗糙的；粗俗的","r":[]},{"i":770,"s":"高频","l":26,"w":"deficit","p":"ˈdefɪsɪt","d":"n. 赤字","r":[]},{"i":771,"s":"高频","l":26,"w":"soak","p":"səʊk","d":"v. 浸泡","r":[]},{"i":772,"s":"高频","l":26,"w":"dump","p":"dʌmp","d":"n. 垃圾场 vt. 倾倒；倾销","r":[]},{"i":773,"s":"高频","l":26,"w":"facilitate","p":"fəˈsɪlɪteɪt","d":"v. 促进；促使","r":[]},{"i":774,"s":"高频","l":26,"w":"flesh","p":"fleʃ","d":"n. 肉；皮肤；果肉","r":[]},{"i":775,"s":"高频","l":26,"w":"bound","p":"baʊnd","d":"a. 可能会……的；有义务的；受约束的 n. 界限；限制 v. 跳跃；限制","r":[]},{"i":776,"s":"高频","l":26,"w":"elite","p":"eɪˈliːt","d":"n. 社会精英","r":[["elect","ɪˈlekt","v. 选举"]]},{"i":777,"s":"高频","l":26,"w":"welfare","p":"ˈwelfeə(r)","d":"n. 福利；幸福","r":[]},{"i":778,"s":"高频","l":27,"w":"sorrow","p":"ˈsɒrəʊ","d":"n. 悲伤；悲痛","r":[["sorrowful","ˈsɒrəʊfl","a. 悲伤的"]]},{"i":779,"s":"高频","l":27,"w":"drag","p":"dræg","d":"v. 拖；拉","r":[]},{"i":780,"s":"高频","l":27,"w":"faculty","p":"ˈfæklti","d":"n. 天赋；能力；系；院；全体教职人员","r":[]},{"i":781,"s":"高频","l":27,"w":"nevertheless","p":"ˌnevəðəˈles","d":"ad. 然而；不过；尽管如此","r":[]},{"i":782,"s":"高频","l":27,"w":"split","p":"splɪt","d":"v. 分裂；分开；分手","r":[]},{"i":783,"s":"高频","l":27,"w":"cultivate","p":"ˈkʌltɪveɪt","d":"v. 耕种；培养","r":[]},{"i":784,"s":"高频","l":27,"w":"foster","p":"ˈfɒstə(r)","d":"v. 促进；助长；抚养","r":[]},{"i":785,"s":"高频","l":27,"w":"hazard","p":"ˈhæzəd","d":"n. 危险；危害","r":[["hazardous","ˈhæzədəs","a. 危险的；有害的"]]},{"i":786,"s":"高频","l":27,"w":"severe","p":"sɪˈvɪə(r)","d":"a. 严重的；严厉的；恶劣的；严峻的","r":[]},{"i":787,"s":"高频","l":27,"w":"trap","p":"træp","d":"n. 陷阱；圈套 vt. 陷入困境；捕捉","r":[]},{"i":788,"s":"高频","l":27,"w":"agriculture","p":"ˈægrɪkʌltʃə(r)","d":"n. 农业","r":[]},{"i":789,"s":"高频","l":27,"w":"sway","p":"sweɪ","d":"vi. 摇动 vt. 影响；使动摇","r":[]},{"i":790,"s":"高频","l":27,"w":"device","p":"dɪˈvaɪs","d":"n. 装置；方法；手段","r":[]},{"i":791,"s":"高频","l":27,"w":"ripe","p":"raɪp","d":"a. 熟的；时机成熟的","r":[]},{"i":792,"s":"高频","l":27,"w":"wander","p":"ˈwɒndə(r)","d":"v. 徘徊；漫步；迷路","r":[]},{"i":793,"s":"高频","l":27,"w":"cast","p":"kɑːst","d":"vt. 投；扔；抛","r":[]},{"i":794,"s":"高频","l":27,"w":"diagnose","p":"ˈdaɪəgnəʊz","d":"v. 诊断","r":[["diagnosis","ˌdaɪəgˈnəʊsɪs","n. 诊断；判断"]]},{"i":795,"s":"高频","l":27,"w":"compose","p":"kəmˈpəʊz","d":"v. 组成；创作；使镇静","r":[["composition","ˌkɒmpəˈzɪʃn","n. 构成；作品；作文"]]},{"i":796,"s":"高频","l":27,"w":"component","p":"kəmˈpəʊnənt","d":"n. 成分；部件","r":[]},{"i":797,"s":"高频","l":27,"w":"compound","p":"ˈkɒmpaʊnd","d":"n. 复合物 a. 复合的 v. 使恶化","r":[]},{"i":798,"s":"高频","l":27,"w":"impose","p":"ɪmˈpəʊz","d":"v. 把……强加于；强制实行","r":[]},{"i":799,"s":"高频","l":27,"w":"expose","p":"ɪkˈspəʊz","d":"v. 使暴露；揭露","r":[["exposure","ɪkˈspəʊʒə(r)","n. 面临；暴露；揭发"]]},{"i":800,"s":"高频","l":27,"w":"dispose","p":"dɪˈspəʊz","d":"v. 布置；安排","r":[]},{"i":801,"s":"高频","l":27,"w":"luxury","p":"ˈlʌkʃəri","d":"n. 奢侈；奢华","r":[["luxurious","lʌgˈʒʊəriəs","a. 奢侈的；豪华的"]]},{"i":802,"s":"高频","l":27,"w":"notion","p":"ˈnəʊʃn","d":"n. 观念；信念；理解","r":[]},{"i":803,"s":"高频","l":27,"w":"discipline","p":"ˈdɪsəplɪn","d":"n. 纪律；训练；科目 vt. 训练；惩罚","r":[]},{"i":804,"s":"高频","l":27,"w":"filter","p":"ˈfɪltə(r)","d":"v. 过滤 n. 过滤器","r":[]},{"i":805,"s":"高频","l":27,"w":"blast","p":"blɑːst","d":"n. 爆炸；突如其来的强劲气流 vt. 炸毁；爆破","r":[]},{"i":806,"s":"高频","l":27,"w":"postpone","p":"pəˈspəʊn","d":"v. 延迟；延期","r":[]},{"i":807,"s":"高频","l":27,"w":"delay","p":"dɪˈleɪ","d":"v. & n. 延迟；延期","r":[]},{"i":808,"s":"高频","l":28,"w":"guarantee","p":"ˌgærənˈtiː","d":"n. & vt. 保证；担保","r":[]},{"i":809,"s":"高频","l":28,"w":"launch","p":"lɔːntʃ","d":"vt. 发射；发起；发行","r":[]},{"i":810,"s":"高频","l":28,"w":"identical","p":"aɪˈdentɪkl","d":"a. 相同的","r":[]},{"i":811,"s":"高频","l":28,"w":"transfer","p":"trænsˈfɜː(r)","d":"v. & n. 转移；搬迁","r":[]},{"i":812,"s":"高频","l":28,"w":"transmit","p":"trænsˈmɪt","d":"vt. 传输；输送；传染","r":[]},{"i":813,"s":"高频","l":28,"w":"transit","p":"ˈtrænsɪt","d":"n. 运输；通过；交通运输体系","r":[["transition","trænˈzɪʃn","n. 过渡；转变"]]},{"i":814,"s":"高频","l":28,"w":"transaction","p":"trænˈzækʃn","d":"n. 交易；办理","r":[]},{"i":815,"s":"高频","l":28,"w":"transparent","p":"trænsˈpærənt","d":"a. 透明的；显而易见的","r":[]},{"i":816,"s":"高频","l":28,"w":"clarify","p":"ˈklærəfaɪ","d":"v. 使清楚；澄清","r":[]},{"i":817,"s":"高频","l":28,"w":"classify","p":"ˈklæsɪfaɪ","d":"vt. 分类；归类","r":[]},{"i":818,"s":"高频","l":28,"w":"identify","p":"aɪˈdentɪfaɪ","d":"v. 确认；认出；鉴定","r":[]},{"i":819,"s":"高频","l":28,"w":"modify","p":"ˈmɒdɪfaɪ","d":"vi. 被修饰；修改 vt. 改变；缓和","r":[]},{"i":820,"s":"高频","l":28,"w":"specify","p":"ˈspesɪfaɪ","d":"vt. 具体说明；详述","r":[]},{"i":821,"s":"高频","l":28,"w":"verify","p":"ˈverɪfaɪ","d":"vt. 核实；查证","r":[]},{"i":822,"s":"高频","l":28,"w":"crucial","p":"ˈkruːʃl","d":"a. 关键性的；极其重要的","r":[]},{"i":823,"s":"高频","l":28,"w":"cruise","p":"kruːz","d":"vi. & n. 巡游；漫游；巡航","r":[]},{"i":824,"s":"高频","l":28,"w":"currency","p":"ˈkʌrənsi","d":"n. 货币；流通","r":[]},{"i":825,"s":"高频","l":28,"w":"curriculum","p":"kəˈrɪkjələm","d":"n. 课程","r":[]},{"i":826,"s":"高频","l":28,"w":"amateur","p":"ˈæmətə(r)","d":"n. 业余爱好者 a. 业余的","r":[]},{"i":827,"s":"高频","l":28,"w":"technique","p":"tekˈniːk","d":"n. 技巧；技能；技术","r":[]},{"i":828,"s":"高频","l":28,"w":"accurate","p":"ˈækjərət","d":"a. 精确的；准确的","r":[]},{"i":829,"s":"高频","l":28,"w":"overcome","p":"ˌəʊvəˈkʌm","d":"v. 战胜；克服；压倒","r":[]},{"i":830,"s":"高频","l":28,"w":"overlook","p":"ˌəʊvəˈlʊk","d":"vt. 忽视；检查；俯瞰；n. 从高处看到的景色","r":[]},{"i":831,"s":"高频","l":28,"w":"incentive","p":"ɪnˈsentɪv","d":"n. 动机；刺激","r":[]},{"i":832,"s":"高频","l":28,"w":"liable","p":"ˈlaɪəbl","d":"a. 有责任的；有……倾向的","r":[]},{"i":833,"s":"高频","l":28,"w":"considerable","p":"kənˈsɪdərəbl","d":"a. 相当大（或多）的","r":[]},{"i":834,"s":"高频","l":28,"w":"applicable","p":"əˈplɪkəbl","d":"a. 适当的；可应用的","r":[["application","ˌæplɪˈkeɪʃn","n. 应用；申请；应用程序（APP）"]]},{"i":835,"s":"高频","l":28,"w":"available","p":"əˈveɪləbl","d":"a. 可获得的；有空的；可购得的","r":[]},{"i":836,"s":"高频","l":28,"w":"remarkable","p":"rɪˈmɑːkəbl","d":"a. 卓越的；值得注意的；非凡的","r":[["remark","rɪˈmɑːk","v. & n. 评论"]]},{"i":837,"s":"高频","l":28,"w":"invaluable","p":"ɪnˈvæljuəbl","d":"a. 非常宝贵的；无价的","r":[]},{"i":838,"s":"高频","l":29,"w":"inevitable","p":"ɪnˈevɪtəbl","d":"a. 不可避免的；必然发生的","r":[]},{"i":839,"s":"高频","l":29,"w":"indispensable","p":"ˌɪndɪˈspensəbl","d":"a. 不可缺少的","r":[]},{"i":840,"s":"高频","l":29,"w":"virtually","p":"ˈvɜːtʃuəli","d":"ad. 实质上；事实上；几乎","r":[]},{"i":841,"s":"高频","l":29,"w":"emerge","p":"ɪˈmɜːdʒ","d":"vi. 浮现；暴露；摆脱","r":[["emergence","ɪˈmɜːdʒəns","n. 出现；发生；浮现"],["emergency","iˈmɜːdʒənsi","n. 紧急情况；突发事件 a. 紧急的"]]},{"i":842,"s":"高频","l":29,"w":"emit","p":"iˈmɪt","d":"vt. 发出，射出，散发（光、热、声音、气等）","r":[["emission","iˈmɪʃn","n. 发射；喷射；散发"]]},{"i":843,"s":"高频","l":29,"w":"eliminate","p":"ɪˈlɪmɪneɪt","d":"vt. 排除；消除；淘汰","r":[]},{"i":844,"s":"高频","l":29,"w":"effective","p":"ɪˈfektɪv","d":"a. 有效的；起作用的","r":[]},{"i":845,"s":"高频","l":29,"w":"efficient","p":"ɪˈfɪʃnt","d":"a. 有效率的","r":[]},{"i":846,"s":"高频","l":29,"w":"evaporate","p":"ɪˈvæpəreɪt","d":"vi. 失踪；消失 vt. 使脱水；使蒸发","r":[]},{"i":847,"s":"高频","l":29,"w":"erect","p":"ɪˈrekt","d":"v. 建立；竖立；创立 a. 直立的；垂直的","r":[]},{"i":848,"s":"高频","l":29,"w":"evolve","p":"iˈvɒlv","d":"v. 发展；进化","r":[["evolution","ˌiːvəˈluːʃn","n. 演变；进化论；进展"]]},{"i":849,"s":"高频","l":29,"w":"ratio","p":"ˈreɪʃiəʊ","d":"n. 比；比率；比例","r":[]},{"i":850,"s":"高频","l":29,"w":"manner","p":"ˈmænə(r)","d":"n. 方式；举止；礼貌","r":[]},{"i":851,"s":"高频","l":29,"w":"manipulate","p":"məˈnɪpjuleɪt","d":"vt. 操作；操纵","r":[]},{"i":852,"s":"高频","l":29,"w":"illustrate","p":"ˈɪləstreɪt","d":"vt. 阐明；举例说明","r":[]},{"i":853,"s":"高频","l":29,"w":"comprehend","p":"ˌkɒmprɪˈhend","d":"v. 理解","r":[["comprehension","ˌkɒmprɪˈhenʃn","n. 理解"],["comprehensive","ˌkɒmprɪˈhensɪv","a. 广泛的；综合的"]]},{"i":854,"s":"高频","l":29,"w":"urban","p":"ˈɜːb(ə)n","d":"a. 都市的","r":[]},{"i":855,"s":"高频","l":29,"w":"rural","p":"ˈrʊərəl","d":"a. 乡下的；农村的","r":[]},{"i":856,"s":"高频","l":29,"w":"awkward","p":"ˈɔːkwəd","d":"a. 尴尬的；笨拙的","r":[]},{"i":857,"s":"高频","l":29,"w":"commerce","p":"ˈkɒmɜːs","d":"n. 商业；商务","r":[["commercial","kəˈmɜːʃl","a. 商业的 n. 广告"]]},{"i":858,"s":"高频","l":29,"w":"merchant","p":"ˈmɜːtʃənt","d":"n. 商人","r":[]},{"i":859,"s":"高频","l":29,"w":"origin","p":"ˈɒrɪdʒɪn","d":"n. 起源；开端","r":[["original","əˈrɪdʒənl","a. 原来的；首创的"]]},{"i":860,"s":"高频","l":29,"w":"orient","p":"ˈɔːrient","d":"vt. 确定方向；使适应","r":[["oriental","ˌɔːriˈentl","a. 东方的；东方人的"]]},{"i":861,"s":"高频","l":29,"w":"dominate","p":"ˈdɒmɪneɪt","d":"v. 支配；占有优势","r":[["dominant","ˈdɒmɪnənt","a. 占优势的；统治的"]]},{"i":862,"s":"高频","l":29,"w":"defect","p":"ˈdiːfekt","d":"n. 瑕疵；缺点","r":[]},{"i":863,"s":"高频","l":29,"w":"deficient","p":"dɪˈfɪʃnt","d":"a. 不足的；有缺陷的","r":[]},{"i":864,"s":"高频","l":29,"w":"sufficient","p":"səˈfɪʃnt","d":"a. 足够的；充分的","r":[]},{"i":865,"s":"高频","l":29,"w":"possess","p":"pəˈzes","d":"v. 拥有；掌握","r":[["possession","pəˈzeʃn","n. 拥有；财产"]]},{"i":866,"s":"高频","l":29,"w":"settle","p":"ˈsetl","d":"vt. 解决；安排；定居","r":[]},{"i":867,"s":"高频","l":29,"w":"reside","p":"rɪˈzaɪd","d":"vi. 居住在","r":[["residence","ˈrezɪdəns","n. 住处；住宅"],["resident","ˈrezɪdənt","n. 居民 a. 居住的"]]},{"i":868,"s":"高频","l":30,"w":"assess","p":"əˈses","d":"vt. 评定；估价","r":[]},{"i":869,"s":"高频","l":30,"w":"constant","p":"ˈkɒnstənt","d":"a. 不断的；恒定的","r":[]},{"i":870,"s":"高频","l":30,"w":"consistent","p":"kənˈsɪstənt","d":"a. 一致的；连续的","r":[]},{"i":871,"s":"高频","l":30,"w":"violent","p":"ˈvaɪələnt","d":"a. 暴力的；猛烈的","r":[]},{"i":872,"s":"高频","l":30,"w":"urgent","p":"ˈɜːdʒənt","d":"a. 急迫的；紧急的","r":[]},{"i":873,"s":"高频","l":30,"w":"innocent","p":"ˈɪnəsnt","d":"a. 无辜的；无知的","r":[]},{"i":874,"s":"高频","l":30,"w":"ingredient","p":"ɪnˈgriːdiənt","d":"n. 组成部分；原料","r":[]},{"i":875,"s":"高频","l":30,"w":"reluctant","p":"rɪˈlʌktənt","d":"a. 不情愿的","r":[]},{"i":876,"s":"高频","l":30,"w":"relevant","p":"ˈreləvənt","d":"a. 相关的","r":[]},{"i":877,"s":"高频","l":30,"w":"territory","p":"ˈterətri","d":"n. 领土；领域","r":[]},{"i":878,"s":"高频","l":30,"w":"rotate","p":"rəʊˈteɪt","d":"v. 旋转；轮流","r":[]},{"i":879,"s":"高频","l":30,"w":"automatic","p":"ˌɔːtəˈmætɪk","d":"a. 自动的","r":[["automate","ˈɔːtəmeɪt","v. 自动化"]]},{"i":880,"s":"高频","l":30,"w":"betray","p":"bɪˈtreɪ","d":"vt. 出卖；背叛；泄露；辜负","r":[]},{"i":881,"s":"高频","l":30,"w":"motivate","p":"ˈməʊtɪveɪt","d":"vt. 使有动机；刺激；激发……的积极性","r":[["motivation","ˌməʊtɪˈveɪʃn","n. 动机；动力"]]},{"i":882,"s":"高频","l":30,"w":"merit","p":"ˈmerɪt","d":"n. 优势；优点；功绩","r":[]},{"i":883,"s":"高频","l":30,"w":"remote","p":"rɪˈməʊt","d":"a. 遥远的；偏僻的；远程的","r":[]},{"i":884,"s":"高频","l":30,"w":"accustom","p":"əˈkʌstəm","d":"vt. 使习惯；使适应","r":[]},{"i":885,"s":"高频","l":30,"w":"variable","p":"ˈveəriəbl","d":"n. 变量 a. 多变的；易变的","r":[]},{"i":886,"s":"高频","l":30,"w":"addition","p":"əˈdɪʃn","d":"n. 增加；加法","r":[["additional","əˈdɪʃənl","a. 额外的；附加的"]]},{"i":887,"s":"高频","l":30,"w":"maintain","p":"meɪnˈteɪn","d":"vt. 维持；维修","r":[]},{"i":888,"s":"高频","l":30,"w":"retain","p":"rɪˈteɪn","d":"vt. 保持；保留","r":[]},{"i":889,"s":"高频","l":30,"w":"attain","p":"əˈteɪn","d":"v. 达到；获得","r":[]},{"i":890,"s":"高频","l":30,"w":"contain","p":"kənˈteɪn","d":"vt. 包含；容纳","r":[]},{"i":891,"s":"高频","l":30,"w":"entertain","p":"ˌentəˈteɪn","d":"vt. 热情款待；使娱乐","r":[]},{"i":892,"s":"高频","l":30,"w":"sustain","p":"səˈsteɪn","d":"vt. 维持（生命、生存）","r":[]},{"i":893,"s":"高频","l":30,"w":"obtain","p":"əbˈteɪn","d":"vt. 获得；得到","r":[]},{"i":894,"s":"高频","l":30,"w":"continent","p":"ˈkɒntɪnənt","d":"n. 大陆；洲","r":[]},{"i":895,"s":"高频","l":30,"w":"allege","p":"əˈledʒ","d":"vt. 断言；宣称","r":[["alleged","əˈledʒd","a. 声称的；被断言的；涉嫌的"]]},{"i":896,"s":"高频","l":30,"w":"gradual","p":"ˈgrædʒuəl","d":"a. 逐渐的；逐步的","r":[]},{"i":897,"s":"高频","l":30,"w":"manual","p":"ˈmænjuəl","d":"a. 手工的；手动的 n. 说明书","r":[]},{"i":898,"s":"高频","l":31,"w":"enhance","p":"ɪnˈhɑːns","d":"vt. 提高；增加；加强","r":[]},{"i":899,"s":"高频","l":31,"w":"bacteria","p":"bækˈtɪəriə","d":"n. (bacterium 的复数) 细菌","r":[]},{"i":900,"s":"高频","l":31,"w":"virus","p":"ˈvaɪrəs","d":"n. 病毒","r":[]},{"i":901,"s":"高频","l":31,"w":"trigger","p":"ˈtrɪgə(r)","d":"n. 扳机 vt. 引发；触发","r":[]},{"i":902,"s":"高频","l":31,"w":"negotiate","p":"nɪˈgəʊʃieɪt","d":"vi. 谈判；协商；交涉","r":[]},{"i":903,"s":"高频","l":31,"w":"ban","p":"bæn","d":"v. & n. 禁止","r":[]},{"i":904,"s":"高频","l":31,"w":"cater","p":"ˈkeɪtə(r)","d":"v. 提供饮食及服务；迎合","r":[]},{"i":905,"s":"高频","l":31,"w":"clash","p":"klæʃ","d":"v. & n. 冲突；争论","r":[]},{"i":906,"s":"高频","l":31,"w":"curb","p":"kɜːb","d":"n. 抑制，控制","r":[]},{"i":907,"s":"高频","l":31,"w":"therapy","p":"ˈθerəpi","d":"n. 治疗；疗法","r":[]},{"i":908,"s":"高频","l":31,"w":"tough","p":"tʌf","d":"a. 坚强的；艰苦的","r":[]},{"i":909,"s":"高频","l":31,"w":"tackle","p":"ˈtækl","d":"vt. 处理；应付","r":[]},{"i":910,"s":"高频","l":31,"w":"element","p":"ˈelɪmənt","d":"n. 元素；要素","r":[]},{"i":911,"s":"高频","l":31,"w":"mend","p":"mend","d":"vt. 修理；修补","r":[]},{"i":912,"s":"高频","l":31,"w":"coincidence","p":"kəʊˈɪnsɪdəns","d":"n. 巧合","r":[]},{"i":913,"s":"高频","l":31,"w":"trace","p":"treɪs","d":"n. 痕迹 vt. 追踪，追溯","r":[]},{"i":914,"s":"高频","l":31,"w":"issue","p":"ˈɪʃuː","d":"n. 争论的问题 v. 公布；发行","r":[]},{"i":915,"s":"高频","l":31,"w":"swallow","p":"ˈswɒləʊ","d":"n. 燕子 v. 吞下；咽下","r":[]},{"i":916,"s":"高频","l":31,"w":"leap","p":"liːp","d":"v. 跳；跃 n. 跳跃；激增","r":[]},{"i":917,"s":"高频","l":31,"w":"hatred","p":"ˈheɪtrɪd","d":"n. 仇恨；憎恨；敌意","r":[]},{"i":918,"s":"高频","l":31,"w":"evil","p":"ˈiːvl","d":"a. 坏的；邪恶的 n. 邪恶；祸害","r":[]},{"i":919,"s":"高频","l":31,"w":"undermine","p":"ˌʌndəˈmaɪn","d":"vt. 逐渐削弱；破坏；暗中损害","r":[]},{"i":920,"s":"高频","l":31,"w":"highlight","p":"ˈhaɪlaɪt","d":"vt. 强调；彰显 n. 亮点；最精彩的部分","r":[]},{"i":921,"s":"高频","l":31,"w":"feedback","p":"ˈfiːdbæk","d":"n. 反馈","r":[]},{"i":922,"s":"高频","l":31,"w":"framework","p":"ˈfreɪmwɜːk","d":"n. 框架；结构；体制","r":[]},{"i":923,"s":"高频","l":31,"w":"fulfil","p":"fʊlˈfɪl","d":"vt. 履行；满足；完成；实现","r":[]},{"i":924,"s":"高频","l":31,"w":"headline","p":"ˈhedlaɪn","d":"n. 标题；新闻提要 vt. 给……加标题","r":[]},{"i":925,"s":"高频","l":31,"w":"farewell","p":"ˌfeəˈwel","d":"n. 告别；欢送","r":[]},{"i":926,"s":"高频","l":31,"w":"headquarters","p":"ˌhedˈkwɔːtəz","d":"n. 司令部；总部","r":[]},{"i":927,"s":"高频","l":31,"w":"copyright","p":"ˈkɒpiraɪt","d":"n. 版权；著作权","r":[]},{"i":928,"s":"高频","l":32,"w":"counterpart","p":"ˈkaʊntəpɑːt","d":"n. 职位(或作用)相当的人；对应的事物","r":[]},{"i":929,"s":"高频","l":32,"w":"harness","p":"ˈhɑːnɪs","d":"vt. 利用；控制；给……上挽具","r":[]},{"i":930,"s":"高频","l":32,"w":"tragedy","p":"ˈtrædʒədi","d":"n. 悲剧；惨事；惨案","r":[]},{"i":931,"s":"高频","l":32,"w":"wreck","p":"rek","d":"n. 失事；残骸 vt. 破坏；毁坏","r":[]},{"i":932,"s":"高频","l":32,"w":"equip","p":"ɪˈkwɪp","d":"vt. 装备；配备；使有能力","r":[]},{"i":933,"s":"高频","l":32,"w":"draft","p":"drɑːft","d":"n. 草稿；草案 vt. 起草；草拟","r":[]},{"i":934,"s":"高频","l":32,"w":"masterpiece","p":"ˈmɑːstəpiːs","d":"n. 杰作；代表作；名著","r":[]},{"i":935,"s":"高频","l":32,"w":"haste","p":"heɪst","d":"n. 急速；急忙；草率","r":[]},{"i":936,"s":"高频","l":32,"w":"mercy","p":"ˈmɜːsi","d":"n. 仁慈；慈悲；恩惠","r":[["mercifully","ˈmɜːsɪfəli","ad. (不幸中) 幸运地"]]},{"i":937,"s":"高频","l":32,"w":"item","p":"ˈaɪtəm","d":"n. 条款；一条；项目","r":[]},{"i":938,"s":"高频","l":32,"w":"straightforward","p":"ˌstreɪtˈfɔːwəd","d":"a. 简单的；易懂的；坦率的","r":[]},{"i":939,"s":"高频","l":32,"w":"guideline","p":"ˈgaɪdlaɪn","d":"n. 指导方针；指南；准则","r":[]},{"i":940,"s":"高频","l":32,"w":"boast","p":"bəʊst","d":"v. 夸耀；吹嘘 n. 自夸；夸耀","r":[]},{"i":941,"s":"高频","l":32,"w":"strike","p":"straɪk","d":"vi. 撞击；罢工；突然想到","r":[]},{"i":942,"s":"高频","l":32,"w":"strive","p":"straɪv","d":"vi. 努力；奋斗","r":[]},{"i":943,"s":"高频","l":32,"w":"crude","p":"kruːd","d":"a. 天然的；粗略的；粗鲁的","r":[]},{"i":944,"s":"高频","l":32,"w":"rouse","p":"raʊz","d":"vt. 激起；使振奋；唤醒","r":[]},{"i":945,"s":"高频","l":32,"w":"chill","p":"tʃɪl","d":"v. (使) 变冷；使感到害怕 n. 寒冷；害怕 a. 寒冷的","r":[]},{"i":946,"s":"高频","l":32,"w":"rear","p":"rɪə(r)","d":"n. 后部；背面；臀部 a. 后面的 vt. 抚养；饲养","r":[]},{"i":947,"s":"高频","l":32,"w":"worship","p":"ˈwɜːʃɪp","d":"n. 礼拜；崇拜 vt. 崇拜；爱慕","r":[]},{"i":948,"s":"高频","l":32,"w":"horizon","p":"həˈraɪzn","d":"n. 地平线；眼界；视野","r":[["horizontal","ˌhɒrɪˈzɒntl","a. 水平的"]]},{"i":949,"s":"高频","l":32,"w":"twist","p":"twɪst","d":"vt. 扭曲；扭伤；拧 n. 扭曲；转动","r":[]},{"i":950,"s":"高频","l":32,"w":"sting","p":"stɪŋ","d":"v. & n. 刺；刺痛","r":[]},{"i":951,"s":"高频","l":32,"w":"fade","p":"feɪd","d":"v. (使) 褪色 vi. 淡出；逐渐消失","r":[]},{"i":952,"s":"高频","l":32,"w":"rival","p":"ˈraɪvl","d":"n. 对手；竞争者 vt. 竞争","r":[]},{"i":953,"s":"高频","l":32,"w":"fierce","p":"fɪəs","d":"a. 凶猛的；猛烈的；激烈的；强烈的","r":[]},{"i":954,"s":"高频","l":32,"w":"grasp","p":"grɑːsp","d":"vt. 抓紧；抓住；理解 n. 掌握；理解（力）","r":[]},{"i":955,"s":"高频","l":32,"w":"dull","p":"dʌl","d":"a. 呆滞的；迟钝的；无聊的；暗淡的；阴暗的","r":[]},{"i":956,"s":"高频","l":32,"w":"swell","p":"swel","d":"v. 肿胀","r":[]},{"i":957,"s":"高频","l":32,"w":"weave","p":"wiːv","d":"v. 编织","r":[]},{"i":958,"s":"高频","l":33,"w":"mature","p":"məˈtʃʊə(r)","d":"a. 成熟的 v. 成熟","r":[]},{"i":959,"s":"高频","l":33,"w":"fatigue","p":"fəˈtiːg","d":"n. 疲劳；劳累","r":[]},{"i":960,"s":"高频","l":33,"w":"bold","p":"bəʊld","d":"a. 大胆的；英勇的；醒目的；粗体的；冒失的","r":[]},{"i":961,"s":"高频","l":33,"w":"slide","p":"slaɪd","d":"v. 滑动；下滑；衰落 n. 幻灯片；滑动；滑梯","r":[]},{"i":962,"s":"高频","l":33,"w":"render","p":"ˈrendə(r)","d":"vt. 提供；翻译；表达；回报","r":[]},{"i":963,"s":"高频","l":33,"w":"earnest","p":"ˈɜːnɪst","d":"a. 认真的；真诚的；诚挚的","r":[]},{"i":964,"s":"高频","l":33,"w":"ease","p":"iːz","d":"n. 容易；安逸 vt. 缓和；减轻","r":[]},{"i":965,"s":"高频","l":33,"w":"scheme","p":"skiːm","d":"n. 计划；阴谋 v. 密谋","r":[]},{"i":966,"s":"高频","l":33,"w":"somehow","p":"ˈsʌmhaʊ","d":"ad. 由于某种原因；不知怎么地","r":[]},{"i":967,"s":"高频","l":33,"w":"breed","p":"briːd","d":"n. 品种 v. 繁殖；养育；引起","r":[]},{"i":968,"s":"高频","l":33,"w":"banknote","p":"ˈbæŋknəʊt","d":"n. 钞票；纸币","r":[]},{"i":969,"s":"高频","l":33,"w":"thrive","p":"θraɪv","d":"vi. 兴旺；繁荣；旺盛","r":[]},{"i":970,"s":"高频","l":33,"w":"vain","p":"veɪn","d":"a. 徒劳的；自负的；无结果的","r":[]},{"i":971,"s":"高频","l":33,"w":"well-off","p":"welˈɒf","d":"a. 富裕的","r":[]},{"i":972,"s":"高频","l":33,"w":"spoil","p":"spɔɪl","d":"vt. 破坏；溺爱","r":[]},{"i":973,"s":"高频","l":33,"w":"idle","p":"ˈaɪdl","d":"a. 空闲的；闲散的；懒散的；无用的","r":[]},{"i":974,"s":"高频","l":33,"w":"realm","p":"relm","d":"n. 领域；范围；王国","r":[]},{"i":975,"s":"高频","l":33,"w":"clue","p":"kluː","d":"n. 线索；提示","r":[]},{"i":976,"s":"高频","l":33,"w":"stuff","p":"stʌf","d":"n. 东西；材料 vt. 装；填；塞","r":[]},{"i":977,"s":"高频","l":33,"w":"swing","p":"swɪŋ","d":"v. 摇摆；转向；转动 n. 秋千；摇摆","r":[]},{"i":978,"s":"高频","l":33,"w":"crack","p":"kræk","d":"n. 裂缝；缝隙 v. (使) 破裂","r":[]},{"i":979,"s":"高频","l":33,"w":"virtue","p":"ˈvɜːtʃuː","d":"n. 美德；德行；优点","r":[]},{"i":980,"s":"高频","l":33,"w":"gap","p":"gæp","d":"n. 缺口；差距；间隔","r":[]},{"i":981,"s":"高频","l":33,"w":"brilliant","p":"ˈbrɪliənt","d":"a. 明亮的","r":[]},{"i":982,"s":"高频","l":33,"w":"gross","p":"grəʊs","d":"a. 总的；粗鲁的；严重的；令人恶心的","r":[]},{"i":983,"s":"高频","l":33,"w":"crush","p":"krʌʃ","d":"v. 压碎；压坏","r":[]},{"i":984,"s":"高频","l":33,"w":"forthcoming","p":"ˌfɔːθˈkʌmɪŋ","d":"a. 即将发生的","r":[]},{"i":985,"s":"高频","l":33,"w":"triumph","p":"ˈtraɪʌmf","d":"n. 胜利；成功 vi. 战胜","r":[]},{"i":986,"s":"高频","l":33,"w":"old-fashioned","p":"ˈəʊldˈfæʃənd","d":"a. 陈旧的；过时的；守旧的","r":[]},{"i":987,"s":"高频","l":33,"w":"durable","p":"ˈdjʊərəbl","d":"a. 耐用的；持久的","r":[]},{"i":988,"s":"基础","l":1,"w":"regret","p":"rɪˈgret","d":"vt. 后悔；对……感到遗憾 n. 懊悔","r":[]},{"i":989,"s":"基础","l":1,"w":"blind","p":"blaɪnd","d":"adj. 盲的；瞎的；盲目的；未察觉的","r":[]},{"i":990,"s":"基础","l":1,"w":"relation","p":"rɪˈleɪʃn","d":"n. 关系；联系；亲戚","r":[]},{"i":991,"s":"基础","l":1,"w":"burst","p":"bɜːst","d":"v.（使）爆裂；vi. 猛冲；突然出现 n. 突发；裂口","r":[]},{"i":992,"s":"基础","l":1,"w":"scream","p":"skriːm","d":"v./n. 尖叫；vt. 高声喊；vi. 呼啸而过","r":[]},{"i":993,"s":"基础","l":1,"w":"bright","p":"braɪt","d":"adj. 明亮的；聪明的；鲜艳的","r":[]},{"i":994,"s":"基础","l":1,"w":"rough","p":"rʌf","d":"adj. 粗糙的；粗略的；粗暴的；恶劣的；艰难的","r":[]},{"i":995,"s":"基础","l":1,"w":"drought","p":"draʊt","d":"n. 干旱；旱灾","r":[]},{"i":996,"s":"基础","l":1,"w":"secretary","p":"ˈsekrətri","d":"n. 秘书；干事；大臣","r":[]},{"i":997,"s":"基础","l":1,"w":"edge","p":"edʒ","d":"n. 边缘；优势","r":[]},{"i":998,"s":"基础","l":1,"w":"bench","p":"bentʃ","d":"n. 长凳；条凳；工作台","r":[]},{"i":999,"s":"基础","l":1,"w":"wine","p":"waɪn","d":"n. 酒；葡萄酒","r":[]},{"i":1000,"s":"基础","l":1,"w":"basin","p":"ˈbeɪsn","d":"n. 盆；洗脸盆；盆地；流域","r":[]},{"i":1001,"s":"基础","l":1,"w":"wheel","p":"wiːl","d":"n. 轮；车轮","r":[]},{"i":1002,"s":"基础","l":1,"w":"wound","p":"wuːnd","d":"n.（身体或心灵上的）伤；伤口","r":[]},{"i":1003,"s":"基础","l":1,"w":"valley","p":"ˈvæli","d":"n. 流域；山谷；溪谷","r":[]},{"i":1004,"s":"基础","l":1,"w":"sink","p":"sɪŋk","d":"v.（使）下沉 n. 水池；水槽","r":[]},{"i":1005,"s":"基础","l":1,"w":"area","p":"ˈeəriə","d":"n. 区域；地区；范围；面积","r":[]},{"i":1006,"s":"基础","l":1,"w":"type","p":"taɪp","d":"n. 类型；典型 v. 打字","r":[]},{"i":1007,"s":"基础","l":1,"w":"soil","p":"sɔɪl","d":"n. 土壤；土地","r":[]},{"i":1008,"s":"基础","l":1,"w":"south","p":"saʊθ","d":"n. 南方；南部 adj. 南的 adv. 在南方；向南方","r":[["southwest","ˌsaʊθˈwest","n. 西南方 adj. 西南的 adv. 往西南；来自西南"],["southern","ˈsʌðən","adj. 南的；南方的 n. 南；南方 adv. 在南方"],["southeast","ˌsaʊθˈiːst","n. 东南；东南地区 adj. 东南的 adv. 来自东南"]]},{"i":1009,"s":"基础","l":1,"w":"prisoner","p":"ˈprɪznə(r)","d":"n. 囚犯","r":[]},{"i":1010,"s":"基础","l":1,"w":"wedding","p":"ˈwedɪŋ","d":"n. 婚礼","r":[]},{"i":1011,"s":"基础","l":1,"w":"tip","p":"tɪp","d":"n. 尖端；末端；建议；小费","r":[]},{"i":1012,"s":"基础","l":1,"w":"ordinary","p":"ˈɔːdnri","d":"adj. 平常的；平凡的","r":[]},{"i":1013,"s":"基础","l":1,"w":"coal","p":"kəʊl","d":"n. 煤；煤块","r":[]},{"i":1014,"s":"基础","l":1,"w":"period","p":"ˈpɪəriəd","d":"n. 阶段；时期；经期","r":[]},{"i":1015,"s":"基础","l":1,"w":"wheat","p":"wiːt","d":"n. 小麦","r":[]},{"i":1016,"s":"基础","l":1,"w":"century","p":"ˈsentʃəri","d":"n. 世纪；百年","r":[]},{"i":1017,"s":"基础","l":1,"w":"dawn","p":"dɔːn","d":"n. 黎明；拂晓；开端","r":[]},{"i":1018,"s":"基础","l":2,"w":"republic","p":"rɪˈpʌblɪk","d":"n. 共和国；共和政体","r":[]},{"i":1019,"s":"基础","l":2,"w":"bias","p":"ˈbaɪəs","d":"n. 偏见；偏爱 vt. 使有偏见；使偏向","r":[]},{"i":1020,"s":"基础","l":2,"w":"dove","p":"dʌv","d":"n. 鸽子；温和派人物","r":[]},{"i":1021,"s":"基础","l":2,"w":"gas","p":"ɡæs","d":"n. 煤气；气体；汽油；天然气","r":[]},{"i":1022,"s":"基础","l":2,"w":"dust","p":"dʌst","d":"n. 灰尘；尘土；粉末","r":[]},{"i":1023,"s":"基础","l":2,"w":"block","p":"blɒk","d":"n. 大块；街区；大楼；障碍物 vt. 堵住；拦截","r":[]},{"i":1024,"s":"基础","l":2,"w":"crop","p":"krɒp","d":"n. 庄稼；作物；收成 vt. 剪裁；剪短","r":[]},{"i":1025,"s":"基础","l":2,"w":"downstairs","p":"ˌdaʊnˈsteəz","d":"adv. 在楼下；往楼下 n. 楼下","r":[]},{"i":1026,"s":"基础","l":2,"w":"ahead","p":"əˈhed","d":"adv. 在前；向前；预先；领先","r":[]},{"i":1027,"s":"基础","l":2,"w":"devil","p":"ˈdevl","d":"n. 魔鬼；撒旦；淘气鬼","r":[]},{"i":1028,"s":"基础","l":2,"w":"gossip","p":"ˈɡɒsɪp","d":"n. 流言蜚语；闲聊 vi. 说三道四","r":[]},{"i":1029,"s":"基础","l":2,"w":"forest","p":"ˈfɒrɪst","d":"n. 森林；森林地带","r":[]},{"i":1030,"s":"基础","l":2,"w":"among","p":"əˈmʌŋ","d":"prep. 在……中间；……之一","r":[]},{"i":1031,"s":"基础","l":2,"w":"fork","p":"fɔːk","d":"n. 餐叉；叉；岔口","r":[]},{"i":1032,"s":"基础","l":2,"w":"cave","p":"keɪv","d":"n. 山洞；洞穴；窑洞","r":[]},{"i":1033,"s":"基础","l":2,"w":"chimney","p":"ˈtʃɪmni","d":"n. 烟囱；裂缝","r":[]},{"i":1034,"s":"基础","l":2,"w":"north","p":"nɔːθ","d":"n. 北；北方 adj. 北方的 adv. 向北","r":[["northern","ˈnɔːðən","adj. 北方的；北部的"],["northwest","ˌnɔːθˈwest","n. 西北 adj. 位于西北的；向西北"],["northeast","ˌnɔːθˈiːst","n. 东北 adj. 位于东北的 adv. 向东北"]]},{"i":1035,"s":"基础","l":2,"w":"honest","p":"ˈɒnɪst","d":"adj. 诚实的；正直的；坦率的","r":[]},{"i":1036,"s":"基础","l":2,"w":"equipment","p":"ɪˈkwɪpmənt","d":"n. 装备；设备；配备","r":[]},{"i":1037,"s":"基础","l":2,"w":"scold","p":"skəʊld","d":"vt. 训斥；责骂","r":[]},{"i":1038,"s":"基础","l":2,"w":"geography","p":"dʒiˈɒɡrəfi","d":"n. 地理；地理学；地形","r":[]},{"i":1039,"s":"基础","l":2,"w":"further","p":"ˈfɜːðə(r)","d":"adv. 更远地；此外 adj. 更多的","r":[]},{"i":1040,"s":"基础","l":2,"w":"remove","p":"rɪˈmuːv","d":"vt. 以移开；搬走；脱掉","r":[]},{"i":1041,"s":"基础","l":2,"w":"mouse","p":"maʊs","d":"n. 老鼠；耗子 （mice 复数）","r":[]},{"i":1042,"s":"基础","l":2,"w":"pale","p":"peɪl","d":"adj. 苍白的；浅色的；微弱的；暗淡的","r":[]},{"i":1043,"s":"基础","l":2,"w":"native","p":"ˈneɪtɪv","d":"adj. 本地的；土著的 n. 本地人","r":[]},{"i":1044,"s":"基础","l":2,"w":"cage","p":"keɪdʒ","d":"n. 笼；鸟笼","r":[]},{"i":1045,"s":"基础","l":2,"w":"peasant","p":"ˈpeznt","d":"n. 农民","r":[]},{"i":1046,"s":"基础","l":2,"w":"theory","p":"ˈθɪəri","d":"n. 理论；原理","r":[]},{"i":1047,"s":"基础","l":2,"w":"medal","p":"ˈmedl","d":"n. 奖章；勋章","r":[]},{"i":1048,"s":"基础","l":3,"w":"tin","p":"tɪn","d":"n. 锡；罐；罐头","r":[]},{"i":1049,"s":"基础","l":3,"w":"shore","p":"ʃɔː(r)","d":"n. 岸；滨","r":[]},{"i":1050,"s":"基础","l":3,"w":"anyhow","p":"ˈenihaʊ","d":"adv. 尽管如此；随便地","r":[["anyone","ˈeniwʌn","pron. 任何人"],["anybody","ˈenibɒdi","pron. 任何人"],["anything","ˈeniθɪŋ","pron. 任何事物"],["anyway","ˈeniwei","adv. 无论如何；反正；尽管如此；至少"],["anywhere","ˈeniweə(r)","adv. 无论何处；在任何地方"]]},{"i":1051,"s":"基础","l":3,"w":"strength","p":"streŋθ","d":"n. 力量；毅力实力；长处","r":[]},{"i":1052,"s":"基础","l":3,"w":"wise","p":"waɪz","d":"adj. 明智的；充满智慧的；英明的","r":[]},{"i":1053,"s":"基础","l":3,"w":"peer","p":"pɪə(r)","d":"n. 同龄人 vi. 盯着看；端详","r":[]},{"i":1054,"s":"基础","l":3,"w":"enemy","p":"ˈenəmi","d":"n. 敌人；仇敌","r":[]},{"i":1055,"s":"基础","l":3,"w":"below","p":"bɪˈləʊ","d":"prep. 在……下面；低于","r":[]},{"i":1056,"s":"基础","l":3,"w":"collar","p":"ˈkɒlə(r)","d":"n. 衣领；项圈 vt. 抓住","r":[]},{"i":1057,"s":"基础","l":3,"w":"political","p":"pəˈlɪtɪkl","d":"adj. 政治的；党派的","r":[]},{"i":1058,"s":"基础","l":3,"w":"cow","p":"kaʊ","d":"n. 母牛；奶牛 v. 恐吓；胁迫","r":[]},{"i":1059,"s":"基础","l":3,"w":"gather","p":"ˈɡæðə(r)","d":"v. 聚集；集合；vt. 收集","r":[]},{"i":1060,"s":"基础","l":3,"w":"quarrel","p":"ˈkwɒrəl","d":"n. / v. 争吵","r":[]},{"i":1061,"s":"基础","l":3,"w":"cheque","p":"tʃek","d":"n. 支票","r":[]},{"i":1062,"s":"基础","l":3,"w":"goose","p":"ɡuːs","d":"n. 鹅","r":[]},{"i":1063,"s":"基础","l":3,"w":"ham","p":"hæm","d":"n. 火腿","r":[]},{"i":1064,"s":"基础","l":3,"w":"natural","p":"ˈnætʃrəl","d":"adj. 自然界的；天然的；天生的；正常的","r":[]},{"i":1065,"s":"基础","l":3,"w":"pan","p":"pæn","d":"n. 平底锅；秤盘","r":[]},{"i":1066,"s":"基础","l":3,"w":"scent","p":"sent","d":"n. 香味；气息；察觉 vt. 嗅出；觉察出","r":[]},{"i":1067,"s":"基础","l":3,"w":"noble","p":"ˈnəʊbl","d":"adj. 贵族的；高尚的；宏伟的","r":[]},{"i":1068,"s":"基础","l":3,"w":"ought","p":"ɔːt","d":"aux. / v. 应当；应该","r":[]},{"i":1069,"s":"基础","l":3,"w":"sheet","p":"ʃiːt","d":"n. 被单；纸张；薄板；一张；一大片","r":[]},{"i":1070,"s":"基础","l":3,"w":"neat","p":"niːt","d":"adj. 整洁的；简洁的；纯的","r":[]},{"i":1071,"s":"基础","l":3,"w":"pure","p":"pjʊə(r)","d":"adj. 纯粹的；纯的","r":[]},{"i":1072,"s":"基础","l":3,"w":"melon","p":"ˈmelən","d":"n. 瓜；甜瓜","r":[]},{"i":1073,"s":"基础","l":3,"w":"heaven","p":"ˈhevn","d":"n. 天堂；极乐世界；天空","r":[]},{"i":1074,"s":"基础","l":3,"w":"tailor","p":"ˈteɪlə(r)","d":"n. 裁缝 vt. 订做","r":[]},{"i":1075,"s":"基础","l":3,"w":"silver","p":"ˈsɪlvə(r)","d":"n. 银；银币；银器；银色 adj. 银色的","r":[]},{"i":1076,"s":"基础","l":3,"w":"tobacco","p":"təˈbækəʊ","d":"n. 烟草；烟叶；烟草制品","r":[]},{"i":1077,"s":"基础","l":3,"w":"spirit","p":"ˈspɪrɪt","d":"n. 精神；心灵；灵魂；志气","r":[]},{"i":1078,"s":"基础","l":4,"w":"indeed","p":"ɪnˈdiːd","d":"adv. 真正地；确实其实；实际上","r":[]},{"i":1079,"s":"基础","l":4,"w":"shrink","p":"ʃrɪŋk","d":"v. （使）缩小；（使）收缩；vi. 缩水；退缩","r":[]},{"i":1080,"s":"基础","l":4,"w":"land","p":"lænd","d":"n. 陆地；土地；地区 v. 使降落，使着陆","r":[]},{"i":1081,"s":"基础","l":4,"w":"willing","p":"ˈwɪlɪŋ","d":"adj. 乐意的；自愿的；心甘情愿的","r":[]},{"i":1082,"s":"基础","l":4,"w":"pile","p":"paɪl","d":"n. 堆 vt. 堆叠","r":[]},{"i":1083,"s":"基础","l":4,"w":"thick","p":"θɪk","d":"adj. 厚的；粗的；浓密的；黏稠的","r":[]},{"i":1084,"s":"基础","l":4,"w":"mode","p":"məʊd","d":"n. 方式；模式；状态","r":[]},{"i":1085,"s":"基础","l":4,"w":"pork","p":"pɔːk","d":"n. 猪肉","r":[]},{"i":1086,"s":"基础","l":4,"w":"cruel","p":"kruːəl","d":"adj. 残忍的；残酷的","r":[]},{"i":1087,"s":"基础","l":4,"w":"root","p":"ruːt","d":"n. 根，根源；根基 vt. 生根","r":[]},{"i":1088,"s":"基础","l":4,"w":"escape","p":"ɪˈskeɪp","d":"v. / n. 逃跑；漏出","r":[]},{"i":1089,"s":"基础","l":4,"w":"fare","p":"feə(r)","d":"n. 车费；船费 vi. 进展","r":[]},{"i":1090,"s":"基础","l":4,"w":"forge","p":"fɔːdʒ","d":"v. 伪造；锻造；vi. 稳步前进","r":[]},{"i":1091,"s":"基础","l":4,"w":"cheese","p":"tʃiːz","d":"n. 乳酪；干酪","r":[]},{"i":1092,"s":"基础","l":4,"w":"percent","p":"pəˈsent","d":"n. 百分之……","r":[]},{"i":1093,"s":"基础","l":4,"w":"cotton","p":"ˈkɒtn","d":"n. 棉；棉线；棉布","r":[]},{"i":1094,"s":"基础","l":4,"w":"depth","p":"depθ","d":"n. 深；深度","r":[]},{"i":1095,"s":"基础","l":4,"w":"fault","p":"fɔːlt","d":"n. 缺点；过失；故障","r":[]},{"i":1096,"s":"基础","l":4,"w":"pity","p":"ˈpɪti","d":"n. 同情；怜悯；遗憾 vt. 同情","r":[]},{"i":1097,"s":"基础","l":4,"w":"communism","p":"ˈkɒmjunɪzəm","d":"n. 共产主义","r":[["communist","ˈkɒmjənɪst","n. 共产主义者 adj. 共产主义的"]]},{"i":1098,"s":"基础","l":4,"w":"advance","p":"ədˈvɑːns","d":"n. / v. 前进；（使）进展 adj. 事先的","r":[]},{"i":1099,"s":"基础","l":4,"w":"mad","p":"mæd","d":"adj. 疯的；气愤的；极愚蠢的；痴迷的","r":[]},{"i":1100,"s":"基础","l":4,"w":"freeze","p":"friːz","d":"v. （使）冻结；冷藏；（使）结冰","r":[]},{"i":1101,"s":"基础","l":4,"w":"brush","p":"brʌʃ","d":"n. 刷子；毛刷；画笔；灌木丛 v. 刷；涂","r":[]},{"i":1102,"s":"基础","l":4,"w":"fridge","p":"frɪdʒ","d":"（亦作 refrigerator）n. 电冰箱","r":[]},{"i":1103,"s":"基础","l":4,"w":"quarter","p":"ˈkwɔːtə(r)","d":"n. 四分之一；一刻钟；季度","r":[]},{"i":1104,"s":"基础","l":4,"w":"fellow","p":"ˈfeləʊ","d":"n. 男人；家伙；伙伴；同事","r":[]},{"i":1105,"s":"基础","l":4,"w":"exhibition","p":"ˌeksɪˈbɪʃn","d":"n. 展览；表现；展览会","r":[]},{"i":1106,"s":"基础","l":4,"w":"headache","p":"ˈhedeɪk","d":"n. 头痛；令人头痛的事","r":[]},{"i":1107,"s":"基础","l":5,"w":"row","p":"rəʊ","d":"n. 排；吵架；纠纷；大的噪音 v. 吵架","r":[]},{"i":1108,"s":"基础","l":5,"w":"scarce","p":"skeəs","d":"adj. 缺乏的；稀少的 adv. 几乎不；简直不","r":[]},{"i":1109,"s":"基础","l":5,"w":"harvest","p":"ˈhɑːvɪst","d":"n 收获；收成 v. 收割；捕猎","r":[]},{"i":1110,"s":"基础","l":5,"w":"greeting","p":"ˈɡriːtɪŋ","d":"n. 问候；招呼；致敬；迎接","r":[["greet","ɡriːt","vt. 问候；招呼；迎接；对……作出反应"]]},{"i":1111,"s":"基础","l":5,"w":"labour","p":"ˈleɪbə(r)","d":"（亦作 labor）n. 劳动；工作；劳工","r":[]},{"i":1112,"s":"基础","l":5,"w":"mirror","p":"ˈmɪrə(r)","d":"n. 镜子；写照 vi. 反映","r":[]},{"i":1113,"s":"基础","l":5,"w":"modern","p":"ˈmɒdn","d":"adj. 现代的；近代的；新式的","r":[]},{"i":1114,"s":"基础","l":5,"w":"nut","p":"nʌt","d":"n. 坚果；螺母","r":[]},{"i":1115,"s":"基础","l":5,"w":"elegant","p":"ˈelɪɡənt","d":"adj. 优雅的；文雅的","r":[]},{"i":1116,"s":"基础","l":5,"w":"square","p":"skweə(r)","d":"n. 平方；广场；正方形 adj. 平方的；正方形的","r":[]},{"i":1117,"s":"基础","l":5,"w":"operate","p":"ˈɒpəreɪt","d":"v. 操作；运营；vi. 运转；动手术","r":[]},{"i":1118,"s":"基础","l":5,"w":"machine","p":"məˈʃiːn","d":"n. 机器；机械装置","r":[]},{"i":1119,"s":"基础","l":5,"w":"shallow","p":"ˈʃæləʊ","d":"adj. 浅的；肤浅的；弱的","r":[]},{"i":1120,"s":"基础","l":5,"w":"twin","p":"twɪn","d":"n. 双胞胎中一人 adj. 双胞胎的；成双的","r":[]},{"i":1121,"s":"基础","l":5,"w":"ladder","p":"ˈlædə(r)","d":"n. 梯子；阶梯","r":[]},{"i":1122,"s":"基础","l":5,"w":"whereas","p":"ˌweərˈæz","d":"conj. 然而；但是；尽管","r":[]},{"i":1123,"s":"基础","l":5,"w":"international","p":"ˌɪntəˈnæʃnəl","d":"adj. 国际的","r":[]},{"i":1124,"s":"基础","l":5,"w":"penny","p":"ˈpeni","d":"n. （英）便士；（美）分","r":[]},{"i":1125,"s":"基础","l":5,"w":"scene","p":"siːn","d":"n. 情景；景象；场面；片段","r":[]},{"i":1126,"s":"基础","l":5,"w":"increase","p":"ɪnˈkriːs","d":"v. 增加；（使）增加；（使）增长","r":[]},{"i":1127,"s":"基础","l":5,"w":"hole","p":"həʊl","d":"n. 洞；孔；眼；巢穴；漏洞","r":[]},{"i":1128,"s":"基础","l":5,"w":"garage","p":"ˈɡærɑːʒ","d":"n. 车库；汽车修理厂","r":[]},{"i":1129,"s":"基础","l":5,"w":"fond","p":"fɒnd","d":"adj. 喜爱的；温情的","r":[]},{"i":1130,"s":"基础","l":5,"w":"destroy","p":"dɪˈstrɔɪ","d":"vt. 破坏；毁坏","r":[]},{"i":1131,"s":"基础","l":5,"w":"energy","p":"ˈenədʒi","d":"n. 活力；精力；能源；能量","r":[]},{"i":1132,"s":"基础","l":5,"w":"bother","p":"ˈbɒðə(r)","d":"v. 麻烦；打扰 n. 麻烦；困难","r":[]},{"i":1133,"s":"基础","l":5,"w":"above","p":"əˈbʌv","d":"prep. 在……上面；超过 adv.在……上面 adj.上述的","r":[]},{"i":1134,"s":"基础","l":5,"w":"honour","p":"ˈɒnə(r)","d":"（亦作 honor）n. 荣幸；尊敬；敬意 vt. 尊敬","r":[]},{"i":1135,"s":"基础","l":5,"w":"seek","p":"siːk","d":"v. 寻找；谋求；试图","r":[]},{"i":1136,"s":"基础","l":5,"w":"medical","p":"ˈmedɪkl","d":"adj. 医学的；医疗的","r":[]},{"i":1137,"s":"基础","l":6,"w":"wipe","p":"waɪp","d":"v. 擦；拭；抹；消除","r":[]},{"i":1138,"s":"基础","l":6,"w":"midday","p":"ˌmɪdˈdeɪ","d":"n. 中午；正午","r":[]},{"i":1139,"s":"基础","l":6,"w":"roof","p":"ruːf","d":"n. 屋顶；顶部","r":[]},{"i":1140,"s":"基础","l":6,"w":"quantity","p":"ˈkwɒntəti","d":"n. 数量；大量","r":[]},{"i":1141,"s":"基础","l":6,"w":"exist","p":"ɪɡˈzɪst","d":"vi. 存在；生存","r":[]},{"i":1142,"s":"基础","l":6,"w":"generation","p":"ˌdʒenəˈreɪʃn","d":"n. 一代；一代人；产生","r":[]},{"i":1143,"s":"基础","l":6,"w":"refer","p":"rɪˈfɜː(r)","d":"v. 谈及；查阅；参考；提交","r":[]},{"i":1144,"s":"基础","l":6,"w":"dialogue","p":"ˈdaɪəlɒɡ","d":"n. 对话；对白","r":[]},{"i":1145,"s":"基础","l":6,"w":"cream","p":"kriːm","d":"n. 奶油；乳脂；奶油色","r":[]},{"i":1146,"s":"基础","l":6,"w":"bone","p":"bəʊn","d":"n. 骨；骨质","r":[]},{"i":1147,"s":"基础","l":6,"w":"deed","p":"diːd","d":"n. 行为；行动；契约；证书","r":[]},{"i":1148,"s":"基础","l":6,"w":"bury","p":"ˈberi","d":"vt. 埋葬；葬；n. 埋藏","r":[]},{"i":1149,"s":"基础","l":6,"w":"cent","p":"sent","d":"n. 分；分币","r":[]},{"i":1150,"s":"基础","l":6,"w":"coast","p":"kəʊst","d":"n. 海岸；海滨","r":[]},{"i":1151,"s":"基础","l":6,"w":"inch","p":"ɪntʃ","d":"n. 英寸；少量；短距离","r":[]},{"i":1152,"s":"基础","l":6,"w":"envelope","p":"ˈenvələʊp","d":"n. 信封","r":[]},{"i":1153,"s":"基础","l":6,"w":"handkerchief","p":"ˈhæŋkətʃɪf","d":"n. 手帕；纸巾","r":[]},{"i":1154,"s":"基础","l":6,"w":"regular","p":"ˈreɡjələ(r)","d":"adj. 定期的；经常的 n. 常客","r":[]},{"i":1155,"s":"基础","l":6,"w":"model","p":"ˈmɒdl","d":"n. 模型；模范；模特儿 v. 做模型 adj. 模范的","r":[]},{"i":1156,"s":"基础","l":6,"w":"pleasure","p":"ˈpleʒə(r)","d":"n. 愉快；快乐；乐事；满足；娱乐","r":[]},{"i":1157,"s":"基础","l":6,"w":"pot","p":"pɒt","d":"n. 锅；壶；罐","r":[]},{"i":1158,"s":"基础","l":6,"w":"length","p":"leŋθ","d":"n. 长；长度；一段；篇幅","r":[]},{"i":1159,"s":"基础","l":6,"w":"plain","p":"pleɪn","d":"adj. 清楚的；朴素的；平凡的；坦诚的 n. 平原","r":[]},{"i":1160,"s":"基础","l":6,"w":"nail","p":"neɪl","d":"n. 指甲；趾甲；钉 vt. 钉","r":[]},{"i":1161,"s":"基础","l":6,"w":"sweater","p":"ˈswetə(r)","d":"n. 毛线衣；针织衫","r":[]},{"i":1162,"s":"基础","l":6,"w":"patent","p":"ˈpætnt","d":"n. 专利权 adj. 明显的；有专利的 vt. 获得专利权","r":[]},{"i":1163,"s":"基础","l":6,"w":"treasure","p":"ˈtreʒə(r)","d":"n. 珠宝；财富；宝物 vt. 珍视；珍藏","r":[]},{"i":1164,"s":"基础","l":6,"w":"shade","p":"ʃeɪd","d":"n. 阴凉处；遮光物；阴暗的 v. 为……遮阳","r":[]},{"i":1165,"s":"基础","l":6,"w":"tale","p":"teɪl","d":"n. 故事；传说","r":[]},{"i":1166,"s":"基础","l":6,"w":"branch","p":"brɑːntʃ","d":"n. 树枝；分支；支路 v. 分开；分岔","r":[]},{"i":1167,"s":"基础","l":7,"w":"bush","p":"bʊʃ","d":"n. 灌木；灌木丛；荒野","r":[]},{"i":1168,"s":"基础","l":7,"w":"laboratory","p":"ləˈbɒrətri","d":"（亦作 lab）n. 实验室；研究所","r":[]},{"i":1169,"s":"基础","l":7,"w":"shelf","p":"ʃelf","d":"n. 架子；搁板；大陆架","r":[]},{"i":1170,"s":"基础","l":7,"w":"internet","p":"ˈɪntənet","d":"n. 因特网","r":[]},{"i":1171,"s":"基础","l":7,"w":"within","p":"wɪˈðɪn","d":"prep. 在...之内 adv. 在内部","r":[]},{"i":1172,"s":"基础","l":7,"w":"temper","p":"ˈtempə(r)","d":"n. 脾气；怒气；情绪 v. 使缓和；使温和","r":[]},{"i":1173,"s":"基础","l":7,"w":"soldier","p":"ˈsəʊldʒə(r)","d":"n. 军人；士兵；战士","r":[]},{"i":1174,"s":"基础","l":7,"w":"prison","p":"ˈprɪzn","d":"n. 监狱；监禁","r":[]},{"i":1175,"s":"基础","l":7,"w":"medicine","p":"ˈmedsn","d":"n. 药；医学","r":[]},{"i":1176,"s":"基础","l":7,"w":"sort","p":"sɔːt","d":"n. 种类；分类 v. 整理；妥善处理","r":[]},{"i":1177,"s":"基础","l":7,"w":"throughout","p":"θruːˈaʊt","d":"prep. / adv. 贯穿；遍及；到处","r":[]},{"i":1178,"s":"基础","l":7,"w":"sweep","p":"swiːp","d":"v. 扫；打扫；扫过","r":[]},{"i":1179,"s":"基础","l":7,"w":"seize","p":"siːz","d":"v. 抓住；逮捕；夺取","r":[]},{"i":1180,"s":"基础","l":7,"w":"otherwise","p":"ˈʌðəwaɪz","d":"adv. 否则；要不然；另外","r":[]},{"i":1181,"s":"基础","l":7,"w":"pleasant","p":"ˈpleznt","d":"adj. 令人愉快的；友好的；可亲的","r":[]},{"i":1182,"s":"基础","l":7,"w":"needle","p":"ˈniːdl","d":"n. 针；编织针；指针；松针；针头","r":[]},{"i":1183,"s":"基础","l":7,"w":"proper","p":"ˈprɒpə(r)","d":"adj. 正确的；恰当的；合乎体统的","r":[]},{"i":1184,"s":"基础","l":7,"w":"mouth","p":"maʊθ","d":"n. 嘴；口；出入口","r":[]},{"i":1185,"s":"基础","l":7,"w":"sail","p":"seɪl","d":"n. 帆；船 v. 航行","r":[]},{"i":1186,"s":"基础","l":7,"w":"hatch","p":"hætʃ","d":"v. 孵出；孵化；策划 n. 舱口；舱门","r":[]},{"i":1187,"s":"基础","l":7,"w":"flow","p":"fləʊ","d":"v. 流动；流通 n. 流动；流畅","r":[]},{"i":1188,"s":"基础","l":7,"w":"peach","p":"piːtʃ","d":"n. 桃子；桃红色 adj. 桃红色的","r":[]},{"i":1189,"s":"基础","l":7,"w":"fist","p":"fɪst","d":"n. 拳头","r":[]},{"i":1190,"s":"基础","l":7,"w":"lip","p":"lɪp","d":"n. 嘴唇；边沿","r":[]},{"i":1191,"s":"基础","l":7,"w":"seed","p":"siːd","d":"n. 种子；籽；萌芽；起源","r":[]},{"i":1192,"s":"基础","l":7,"w":"particular","p":"pəˈtɪkjələ(r)","d":"adj. 特殊的；特定的；挑剔的","r":[]},{"i":1193,"s":"基础","l":7,"w":"mailbox","p":"ˈmeɪlbɒks","d":"n. 邮筒；信箱；电子邮箱","r":[]},{"i":1194,"s":"基础","l":7,"w":"code","p":"kəʊd","d":"n. 密码；道德准则；法典 vi. 为……编码","r":[]},{"i":1195,"s":"基础","l":7,"w":"boil","p":"bɔɪl","d":"v. （使）沸腾；煮沸；烧开","r":[]},{"i":1196,"s":"基础","l":7,"w":"district","p":"ˈdɪstrɪkt","d":"n. 区；地区；区域","r":[]},{"i":1197,"s":"基础","l":8,"w":"cottage","p":"ˈkɒtɪdʒ","d":"n. 村舍；小屋","r":[]},{"i":1198,"s":"基础","l":8,"w":"hereby","p":"ˌhɪəˈbaɪ","d":"adv. 特此；以此","r":[]},{"i":1199,"s":"基础","l":8,"w":"jail","p":"dʒeɪl","d":"n. 监狱 vt. 监禁","r":[]},{"i":1200,"s":"基础","l":8,"w":"sketch","p":"sketʃ","d":"v. 画素描；概述 n. 素描；小品；概述","r":[]},{"i":1201,"s":"基础","l":8,"w":"thought","p":"θɔːt","d":"n. 思想；思考；想法；关心","r":[]},{"i":1202,"s":"基础","l":8,"w":"stair","p":"steə(r)","d":"n. 楼梯","r":[]},{"i":1203,"s":"基础","l":8,"w":"iron","p":"ˈaɪən","d":"n. 铁；熨斗 v. 熨；烫平 adj. 坚强的","r":[]},{"i":1204,"s":"基础","l":8,"w":"tap","p":"tæp","d":"n. 水龙头 v. 轻敲；轻拍；轻叩；开发","r":[]},{"i":1205,"s":"基础","l":8,"w":"upward","p":"ˈʌpwəd","d":"adj. 向上的；上升的 adv. 向上","r":[]},{"i":1206,"s":"基础","l":8,"w":"tight","p":"taɪt","d":"adj. 紧的；牢固的；绷紧的；严厉的","r":[]},{"i":1207,"s":"基础","l":8,"w":"surface","p":"ˈsɜːfɪs","d":"n. 表面；表层；外观","r":[]},{"i":1208,"s":"基础","l":8,"w":"physics","p":"ˈfɪzɪks","d":"n. 物理学","r":[]},{"i":1209,"s":"基础","l":8,"w":"sight","p":"saɪt","d":"n. 视力；视觉；情景；景点","r":[]},{"i":1210,"s":"基础","l":8,"w":"path","p":"pɑːθ","d":"n. 路；小道；道路","r":[]},{"i":1211,"s":"基础","l":8,"w":"narrow","p":"ˈnærəʊ","d":"adj. 狭窄的；勉强的；狭隘的","r":[]},{"i":1212,"s":"基础","l":8,"w":"ceiling","p":"ˈsiːlɪŋ","d":"n. 天花板；顶棚；上限","r":[]},{"i":1213,"s":"基础","l":8,"w":"accept","p":"əkˈsept","d":"v. 接受；忍受；同意","r":[]},{"i":1214,"s":"基础","l":8,"w":"diet","p":"ˈdaɪət","d":"n. 饮食 v. 节食","r":[]},{"i":1215,"s":"基础","l":8,"w":"pledge","p":"pledʒ","d":"v. 正式承诺；使保证 n. 保证；誓言","r":[]},{"i":1216,"s":"基础","l":8,"w":"servant","p":"ˈsɜːvənt","d":"n. 仆人；佣人；职员","r":[]},{"i":1217,"s":"基础","l":8,"w":"metal","p":"ˈmetl","d":"n. 金属","r":[]},{"i":1218,"s":"基础","l":8,"w":"phrase","p":"freɪz","d":"n. 短语；词组；成语；惯用语","r":[]},{"i":1219,"s":"基础","l":8,"w":"telegram","p":"ˈtelɪɡræm","d":"n. 电报","r":[]},{"i":1220,"s":"基础","l":8,"w":"steak","p":"steɪk","d":"n. 牛排；肉排；鱼排","r":[]},{"i":1221,"s":"基础","l":8,"w":"ski","p":"skiː","d":"v. 滑雪","r":[]},{"i":1222,"s":"基础","l":8,"w":"technical","p":"ˈteknɪkl","d":"adj. 技术的；工艺的；专业的","r":[]},{"i":1223,"s":"基础","l":8,"w":"puzzle","p":"ˈpʌzl","d":"n. 谜；智力游戏；难题 v. 使迷惑","r":[]},{"i":1224,"s":"基础","l":8,"w":"spoon","p":"spuːn","d":"n. 匙；勺子；一匙的量","r":[]},{"i":1225,"s":"基础","l":8,"w":"pearl","p":"pɜːl","d":"n. 珍珠","r":[]},{"i":1226,"s":"基础","l":8,"w":"upstairs","p":"ˌʌpˈsteəz","d":"adv. 在楼上；往楼上 adj. 楼上的 n. 楼上","r":[]},{"i":1227,"s":"基础","l":9,"w":"thief","p":"θiːf","d":"n. 小偷；贼","r":[]},{"i":1228,"s":"基础","l":9,"w":"pipe","p":"paɪp","d":"n. 管子；管道；烟斗；管乐","r":[]},{"i":1229,"s":"基础","l":9,"w":"broad","p":"brɔːd","d":"adj. 宽阔的；广泛的；概括的；辽阔的","r":[]},{"i":1230,"s":"基础","l":9,"w":"port","p":"pɔːt","d":"n. 港；港口；港口城市","r":[]},{"i":1231,"s":"基础","l":9,"w":"opposite","p":"ˈɒpəzɪt","d":"adj. 对面的 n. 对立的人（物）prep. 在……对面","r":[]},{"i":1232,"s":"基础","l":9,"w":"heat","p":"hiːt","d":"n. 热；温度 v. 变热；加热","r":[]},{"i":1233,"s":"基础","l":9,"w":"pupil","p":"ˈpjuːpl","d":"n. 学生；小学生；门徒；瞳孔","r":[]},{"i":1234,"s":"基础","l":9,"w":"saw","p":"sɔː","d":"n. / v. 锯","r":[]},{"i":1235,"s":"基础","l":9,"w":"fair","p":"feə(r)","d":"adj. 适当的；公正的；漂亮的 n. 集市","r":[]},{"i":1236,"s":"基础","l":9,"w":"click","p":"klɪk","d":"v. 点击；（使发出）咔嗒声","r":[]},{"i":1237,"s":"基础","l":9,"w":"goat","p":"ɡəʊt","d":"n. 山羊","r":[]},{"i":1238,"s":"基础","l":9,"w":"dozen","p":"ˈdʌzn","d":"n. 十二个；一打；许多","r":[]},{"i":1239,"s":"基础","l":9,"w":"castle","p":"ˈkɑːsl","d":"n. 城堡","r":[]},{"i":1240,"s":"基础","l":9,"w":"camp","p":"kæmp","d":"n. 营地；兵营 v. 宿营","r":[]},{"i":1241,"s":"基础","l":9,"w":"equal","p":"ˈiːkwəl","d":"adj. 相等的；平等的；能胜任的","r":[]},{"i":1242,"s":"基础","l":9,"w":"cock","p":"kɒk","d":"n. 公鸡；雄禽","r":[]},{"i":1243,"s":"基础","l":9,"w":"blame","p":"bleɪm","d":"vt. 责怪；把……归咎于 n. 责任","r":[]},{"i":1244,"s":"基础","l":9,"w":"dial","p":"ˈdaɪəl","d":"v. 拨（电话号码）n. 表盘；刻度盘","r":[]},{"i":1245,"s":"基础","l":9,"w":"chaos","p":"ˈkeɪɒs","d":"n. 混乱；杂乱；紊乱","r":[]},{"i":1246,"s":"基础","l":9,"w":"hack","p":"hæk","d":"v. 砍；非法侵入 n. 侵入","r":[]},{"i":1247,"s":"基础","l":9,"w":"slave","p":"sleɪv","d":"n. 奴隶 vi. 苦干","r":[]},{"i":1248,"s":"基础","l":9,"w":"tongue","p":"tʌŋ","d":"n. 舌头；语言；说话方式","r":[]},{"i":1249,"s":"基础","l":9,"w":"tire","p":"ˈtaɪə(r)","d":"vt. （使）感到累 n. 轮胎","r":[]},{"i":1250,"s":"基础","l":9,"w":"bitter","p":"ˈbɪtə(r)","d":"adj. 苦的；痛苦的；怨恨的；严寒的","r":[]},{"i":1251,"s":"基础","l":9,"w":"button","p":"ˈbʌtn","d":"n. 纽扣；按钮；徽章 v. 扣上","r":[]},{"i":1252,"s":"基础","l":9,"w":"hall","p":"hɔːl","d":"n. 门厅；过道；礼堂","r":[]},{"i":1253,"s":"基础","l":9,"w":"drown","p":"draʊn","d":"v. 溺死；淹没","r":[]},{"i":1254,"s":"基础","l":9,"w":"cell","p":"sel","d":"n. 细胞；小房间；牢房","r":[]},{"i":1255,"s":"基础","l":9,"w":"party","p":"ˈpɑːti","d":"n. 聚会；党；党派","r":[]},{"i":1256,"s":"基础","l":9,"w":"wage","p":"weɪdʒ","d":"n. 工资；工钱","r":[]},{"i":1257,"s":"基础","l":10,"w":"flight","p":"flaɪt","d":"n. 航班；飞行；逃跑","r":[]},{"i":1258,"s":"基础","l":10,"w":"fence","p":"fens","d":"n. 栅栏；障碍物","r":[]},{"i":1259,"s":"基础","l":10,"w":"affair","p":"əˈfeə(r)","d":"n. 事情；事件；暧昧关系","r":[]},{"i":1260,"s":"基础","l":10,"w":"chalk","p":"tʃɔːk","d":"n. 粉笔","r":[]},{"i":1261,"s":"基础","l":10,"w":"bend","p":"bend","d":"v. （使）倾斜；弯曲；弯腰","r":[]},{"i":1262,"s":"基础","l":10,"w":"cough","p":"kɒf","d":"n. / v. 咳嗽","r":[]},{"i":1263,"s":"基础","l":10,"w":"chain","p":"tʃeɪn","d":"n. 链；链条；一连串 vt. 用锁链拴","r":[]},{"i":1264,"s":"基础","l":10,"w":"operation","p":"ˌɒpəˈreɪʃn","d":"n. 操作；手术；运算；行动；运转","r":[]},{"i":1265,"s":"基础","l":10,"w":"throw","p":"θrəʊ","d":"v. 投；抛；掷；扔","r":[]},{"i":1266,"s":"基础","l":10,"w":"slip","p":"slɪp","d":"v. 滑倒；脱落；下降；溜走；陷入","r":[]},{"i":1267,"s":"基础","l":10,"w":"disk","p":"dɪsk","d":"（亦作 disc）n. 磁盘","r":[]},{"i":1268,"s":"基础","l":10,"w":"league","p":"liːɡ","d":"n. 同盟；联盟；联合会；级别；水平","r":[]},{"i":1269,"s":"基础","l":10,"w":"corn","p":"kɔːn","d":"n. （英）谷物；（美）玉米","r":[]},{"i":1270,"s":"基础","l":10,"w":"fetch","p":"fetʃ","d":"v. 拿来；请来；接来；卖得","r":[]},{"i":1271,"s":"基础","l":10,"w":"haul","p":"hɔːl","d":"v. 拖；拉；用力缓慢挪动到 n. 大批赃物","r":[]},{"i":1272,"s":"基础","l":10,"w":"situation","p":"ˌsɪtʃuˈeɪʃn","d":"n. 形势；情况；位置","r":[]},{"i":1273,"s":"基础","l":10,"w":"olympic","p":"əˈlɪmpɪk","d":"adj. 奥林匹克运动会的","r":[]},{"i":1274,"s":"基础","l":10,"w":"poll","p":"pəʊl","d":"n. 民意测验；计票；投票数 v. 获得（票数）","r":[]},{"i":1275,"s":"基础","l":10,"w":"haunt","p":"hɔːnt","d":"v. 出没；难以忘却 n. 常去的场所","r":[]},{"i":1276,"s":"基础","l":10,"w":"church","p":"tʃɜːtʃ","d":"n. 教堂；礼拜堂；礼拜；教派","r":[]},{"i":1277,"s":"基础","l":10,"w":"dare","p":"deə(r)","d":"v. / aux. 敢；敢于 n. 挑战；激将","r":[]},{"i":1278,"s":"基础","l":10,"w":"broadcast","p":"ˈbrɔːdkɑːst","d":"n. 广播 v. 播放；散布","r":[]},{"i":1279,"s":"基础","l":10,"w":"solid","p":"ˈsɒlɪd","d":"adj. 固体的；结实的；可靠的固体","r":[]},{"i":1280,"s":"基础","l":10,"w":"altogether","p":"ˌɔːltəˈɡeðə(r)","d":"adv. 全部地；完全地；总共；总而言之","r":[]},{"i":1281,"s":"基础","l":10,"w":"bite","p":"baɪt","d":"v. 咬；叮；咬饵；上钩","r":[]},{"i":1282,"s":"基础","l":10,"w":"obey","p":"əˈbeɪ","d":"v. 服从；遵守","r":[]},{"i":1283,"s":"基础","l":10,"w":"plough","p":"plaʊ","d":"n. 犁 v. 犁；耕","r":[]},{"i":1284,"s":"基础","l":10,"w":"edit","p":"ˈedɪt","d":"vt. 编辑；校订；剪辑；主编","r":[]},{"i":1285,"s":"基础","l":10,"w":"quality","p":"ˈkwɒləti","d":"n. 质量；品质；特性","r":[]},{"i":1286,"s":"基础","l":10,"w":"fever","p":"ˈfiːvə(r)","d":"n. 发烧；发热；激动不安","r":[]},{"i":1287,"s":"偶考","l":1,"w":"presently","p":"ˈprezntli","d":"adj. 不久；目前","r":[]},{"i":1288,"s":"偶考","l":1,"w":"plantation","p":"plɑːnˈteɪʃn","d":"n. 种植园；人造林","r":[]},{"i":1289,"s":"偶考","l":1,"w":"attic","p":"ˈætɪk","d":"n. 阁楼；顶楼","r":[]},{"i":1290,"s":"偶考","l":1,"w":"bulletin","p":"ˈbʊlətɪn","d":"n. 新闻简报；公告","r":[]},{"i":1291,"s":"偶考","l":1,"w":"discrimination","p":"dɪˌskrɪmɪˈneɪʃn","d":"n. 歧视；偏袒；区别；识别","r":[]},{"i":1292,"s":"偶考","l":1,"w":"marsh","p":"mɑːʃ","d":"n. 沼泽；湿地","r":[]},{"i":1293,"s":"偶考","l":1,"w":"pine","p":"paɪn","d":"n. 松树；松木 v. 悲伤；难过","r":[]},{"i":1294,"s":"偶考","l":1,"w":"breadth","p":"bredθ","d":"n. 宽度；阔度；广泛","r":[]},{"i":1295,"s":"偶考","l":1,"w":"route","p":"ruːt","d":"n. 路线；途径","r":[]},{"i":1296,"s":"偶考","l":1,"w":"marathon","p":"ˈmærəθən","d":"n. 马拉松赛跑；马拉松式的活动","r":[]},{"i":1297,"s":"偶考","l":1,"w":"ash","p":"æʃ","d":"n. 灰；灰烬；骨灰","r":[]},{"i":1298,"s":"偶考","l":1,"w":"brandy","p":"ˈbrændi","d":"n. 白兰地（酒）","r":[]},{"i":1299,"s":"偶考","l":1,"w":"lid","p":"lɪd","d":"n. 盖子","r":[]},{"i":1300,"s":"偶考","l":1,"w":"brag","p":"bræɡ","d":"v. 吹嘘；夸耀","r":[]},{"i":1301,"s":"偶考","l":1,"w":"column","p":"ˈkɒləm","d":"n. 柱；支柱；圆柱；栏；专栏","r":[]},{"i":1302,"s":"偶考","l":1,"w":"boom","p":"buːm","d":"n. 繁荣；激增 v. 繁荣昌盛；轰鸣","r":[]},{"i":1303,"s":"偶考","l":1,"w":"rumour","p":"ˈruːmə(r)","d":"（亦作 rumor）n. 谣言","r":[]},{"i":1304,"s":"偶考","l":1,"w":"tube","p":"tjuːb","d":"n. 管；管状物；软管","r":[]},{"i":1305,"s":"偶考","l":1,"w":"colony","p":"ˈkɒləni","d":"n. 殖民地；群；群体","r":[]},{"i":1306,"s":"偶考","l":1,"w":"blur","p":"blɜː(r)","d":"v. （使）模糊不清 n. 模糊形状","r":[]},{"i":1307,"s":"偶考","l":2,"w":"physicist","p":"ˈfɪzɪsɪst","d":"n. 物理学家","r":[]},{"i":1308,"s":"偶考","l":2,"w":"arrow","p":"ˈærəʊ","d":"n. 箭；箭头","r":[]},{"i":1309,"s":"偶考","l":2,"w":"terror","p":"ˈterə(r)","d":"n. 恐怖；惊骇；小捣蛋","r":[]},{"i":1310,"s":"偶考","l":2,"w":"approval","p":"əˈpruːvl","d":"n. 赞成；同意；批准","r":[]},{"i":1311,"s":"偶考","l":2,"w":"portable","p":"ˈpɔːtəbl","d":"adj. 轻便的；手提的；便携式的","r":[]},{"i":1312,"s":"偶考","l":2,"w":"trunk","p":"trʌŋk","d":"n. 树干；大衣箱；象鼻；躯干","r":[]},{"i":1313,"s":"偶考","l":2,"w":"ancestor","p":"ˈænsestə(r)","d":"n. 祖宗；祖先","r":[]},{"i":1314,"s":"偶考","l":2,"w":"horizontal","p":"ˌhɒrɪˈzɒntl","d":"adj. 水平的；横的 n. 水平位置；水平线","r":[]},{"i":1315,"s":"偶考","l":2,"w":"thunder","p":"ˈθʌndə(r)","d":"n. 雷（声） v. 打雷；怒吼","r":[]},{"i":1316,"s":"偶考","l":2,"w":"imperial","p":"ɪmˈpɪəriəl","d":"adj. 帝国的；（度量衡）英制的","r":[]},{"i":1317,"s":"偶考","l":2,"w":"jewel","p":"ˈdʒuːəl","d":"n. 宝石；珠宝首饰；宝贝","r":[]},{"i":1318,"s":"偶考","l":2,"w":"insect","p":"ˈɪnsekt","d":"n. 昆虫","r":[]},{"i":1319,"s":"偶考","l":2,"w":"knit","p":"nɪt","d":"v. 编织；（使）紧凑","r":[]},{"i":1320,"s":"偶考","l":2,"w":"incidence","p":"ˈɪnsɪdəns","d":"n. 发生率；发生范围","r":[]},{"i":1321,"s":"偶考","l":2,"w":"christ","p":"kraɪst","d":"n. 基督；耶稣基督","r":[["christian","ˈkrɪstʃən","n. 基督教徒 adj. 基督教的；基督教徒的"]]},{"i":1322,"s":"偶考","l":2,"w":"infant","p":"ˈɪnfənt","d":"n. 婴儿；幼儿 adj. 供婴幼儿用的；初期的","r":[]},{"i":1323,"s":"偶考","l":2,"w":"troublesome","p":"ˈtrʌblsəm","d":"adj. 令人烦恼的；引起麻烦的","r":[]},{"i":1324,"s":"偶考","l":2,"w":"indication","p":"ˌɪndɪˈkeɪʃn","d":"n. 迹象；表示；表明","r":[]},{"i":1325,"s":"偶考","l":2,"w":"pillar","p":"ˈpɪlə(r)","d":"n. 柱子；核心；支柱","r":[]},{"i":1326,"s":"偶考","l":2,"w":"industrialize","p":"ɪnˈdʌstriəlaɪz","d":"v. （使）工业化","r":[]},{"i":1327,"s":"偶考","l":3,"w":"indirect","p":"ˌɪndəˈrekt","d":"adj. 间接的；迂回的","r":[]},{"i":1328,"s":"偶考","l":3,"w":"gang","p":"ɡæŋ","d":"n. 帮；一伙；一群","r":[]},{"i":1329,"s":"偶考","l":3,"w":"thumb","p":"θʌm","d":"n. 拇指 v. 示意要求搭车","r":[]},{"i":1330,"s":"偶考","l":3,"w":"decoration","p":"ˌdekəˈreɪʃn","d":"n. 装饰；装饰品","r":[]},{"i":1331,"s":"偶考","l":3,"w":"fuss","p":"fʌs","d":"n. 大惊小怪；大发牢骚 v. 过分关心；瞎忙活","r":[]},{"i":1332,"s":"偶考","l":3,"w":"deck","p":"dek","d":"n. 甲板；舱面；层面 v. 装饰","r":[]},{"i":1333,"s":"偶考","l":3,"w":"portrait","p":"ˈpɔːtreɪt","d":"n. 肖像；描绘","r":[]},{"i":1334,"s":"偶考","l":3,"w":"funeral","p":"ˈfjuːnərəl","d":"n. 葬礼；丧礼","r":[]},{"i":1335,"s":"偶考","l":3,"w":"theoretical","p":"ˌθɪəˈretɪkl","d":"adj. 理论（上）的","r":[]},{"i":1336,"s":"偶考","l":3,"w":"customs","p":"ˈkʌstəmz","d":"n. 海关；关税","r":[]},{"i":1337,"s":"偶考","l":3,"w":"operational","p":"ˌɒpəˈreɪʃənl","d":"adj. 操作上的；可使用的","r":[["operator","ˈɒpəreɪtə(r)","n. 操作人员；接线员；经营者"]]},{"i":1338,"s":"偶考","l":3,"w":"frost","p":"frɒst","d":"n. 霜；严寒天气；冰冻（期） v. （使）结霜","r":[]},{"i":1339,"s":"偶考","l":3,"w":"database","p":"ˈdeɪtəbeɪs","d":"n. 资料库；数据库","r":[]},{"i":1340,"s":"偶考","l":3,"w":"rope","p":"rəʊp","d":"n. 粗绳；绳索 vt. 用绳捆","r":[]},{"i":1341,"s":"偶考","l":3,"w":"trim","p":"trɪm","d":"adj. 整齐的；苗条的 vt./n. 修剪；装饰（物）","r":[]},{"i":1342,"s":"偶考","l":3,"w":"freight","p":"freɪt","d":"n. 货运；货物 vt. 货运","r":[]},{"i":1343,"s":"偶考","l":3,"w":"crown","p":"kraʊn","d":"n. 王冠；冕；花冠；桂冠；冠军","r":[]},{"i":1344,"s":"偶考","l":3,"w":"ministry","p":"ˈmɪnɪstri","d":"n. （政府的）部；神职；牧师职位","r":[]},{"i":1345,"s":"偶考","l":3,"w":"clay","p":"kleɪ","d":"n. 粘土；泥土","r":[]},{"i":1346,"s":"偶考","l":3,"w":"fortunately","p":"ˈfɔːtʃənətli","d":"adv. 幸运地","r":[]},{"i":1347,"s":"偶考","l":4,"w":"thrust","p":"θrʌst","d":"v. 插；刺；猛推 n. 插；戳；推力；要点","r":[]},{"i":1348,"s":"偶考","l":4,"w":"claw","p":"klɔː","d":"n. 爪；脚爪；螯","r":[]},{"i":1349,"s":"偶考","l":4,"w":"flock","p":"flɒk","d":"n. 群；一大群 vi. 群集；聚集；蜂拥","r":[]},{"i":1350,"s":"偶考","l":4,"w":"basically","p":"ˈbeɪsɪkli","d":"adv. 基本上；从根本上说","r":[]},{"i":1351,"s":"偶考","l":4,"w":"banquet","p":"ˈbæŋkwɪt","d":"n. 宴会","r":[]},{"i":1352,"s":"偶考","l":4,"w":"classification","p":"ˌklæsɪfɪˈkeɪʃn","d":"n. 分类；分级；类别；等级分类法","r":[]},{"i":1353,"s":"偶考","l":4,"w":"zone","p":"zəʊn","d":"n. 地区；区域","r":[]},{"i":1354,"s":"偶考","l":4,"w":"explosive","p":"ɪkˈspləʊsɪv","d":"adj. 易爆炸的；猛增的；暴躁的 n. 炸药","r":[]},{"i":1355,"s":"偶考","l":4,"w":"beard","p":"bɪəd","d":"n. 胡须；络腮胡子","r":[]},{"i":1356,"s":"偶考","l":4,"w":"pad","p":"pæd","d":"n. 垫；爪垫；便笺本 v. 填充；轻步行为","r":[]},{"i":1357,"s":"偶考","l":4,"w":"experimental","p":"ɪkˌsperɪˈmentl","d":"adj. 实验性的；试验性的","r":[]},{"i":1358,"s":"偶考","l":4,"w":"belly","p":"ˈbeli","d":"n. 腹部；肚子 v. 隆起；鼓起","r":[]},{"i":1359,"s":"偶考","l":4,"w":"trifle","p":"ˈtraɪfl","d":"n. 琐事；有点儿；稍微","r":[]},{"i":1360,"s":"偶考","l":4,"w":"mainland","p":"ˈmeɪnlænd","d":"n. 大陆","r":[]},{"i":1361,"s":"偶考","l":4,"w":"aside","p":"əˈsaɪd","d":"adv. 在旁边；撇开 n. 旁白","r":[]},{"i":1362,"s":"偶考","l":4,"w":"marshal","p":"ˈmɑːʃl","d":"n. 元帅；司仪；执行官 vt. 安排","r":[]},{"i":1363,"s":"偶考","l":4,"w":"chop","p":"tʃɒp","d":"v. 砍；劈；切碎；削减；降低","r":[]},{"i":1364,"s":"偶考","l":4,"w":"revolutionary","p":"ˌrevəˈluːʃənəri","d":"adj. 革命的 n. 革命者","r":[]},{"i":1365,"s":"偶考","l":4,"w":"exceedingly","p":"ɪkˈsiːdɪŋli","d":"adv. 非常；极其","r":[]},{"i":1366,"s":"偶考","l":5,"w":"bible","p":"ˈbaɪbl","d":"n. 基督教的《圣经》","r":[]},{"i":1367,"s":"偶考","l":5,"w":"naturally","p":"ˈnætʃrəli","d":"adv. 自然地；天然地；大方地","r":[]},{"i":1368,"s":"偶考","l":5,"w":"loyalty","p":"ˈlɔɪəlti","d":"n. 忠诚；忠实","r":[]},{"i":1369,"s":"偶考","l":5,"w":"altitude","p":"ˈæltɪtjuːd","d":"n. 海拔；高度；高处","r":[]},{"i":1370,"s":"偶考","l":5,"w":"emperor","p":"ˈempərə(r)","d":"n. 皇帝","r":[]},{"i":1371,"s":"偶考","l":5,"w":"mystery","p":"ˈmɪstri","d":"n. 神秘（性）；神秘的事物；悬疑（故事）","r":[]},{"i":1372,"s":"偶考","l":5,"w":"ridiculous","p":"rɪˈdɪkjələs","d":"adj. 荒谬的；可笑的","r":[]},{"i":1373,"s":"偶考","l":5,"w":"lord","p":"lɔːd","d":"n. 贵族；上帝；（尊称）大人；阁下","r":[]},{"i":1374,"s":"偶考","l":5,"w":"alley","p":"ˈæli","d":"n. 小街；小巷；胡同","r":[]},{"i":1375,"s":"偶考","l":5,"w":"parcel","p":"ˈpɑːsl","d":"n. 包裹；邮包；一块地","r":[]},{"i":1376,"s":"偶考","l":5,"w":"philosopher","p":"fəˈlɒsəfə(r)","d":"n. 哲学家","r":[]},{"i":1377,"s":"偶考","l":5,"w":"elbow","p":"ˈelbəʊ","d":"n. 肘；肘部 v. 用肘推","r":[]},{"i":1378,"s":"偶考","l":5,"w":"psychological","p":"ˌsaɪkəˈlɒdʒɪkl","d":"adj. 心理的；心理学上的","r":[["psychology","saɪˈkɒlədʒi","n. 心理学；心理"]]},{"i":1379,"s":"偶考","l":5,"w":"mushroom","p":"ˈmʌʃrʊm","d":"n. 蘑菇 vi. 迅速发展；快速增长","r":[]},{"i":1380,"s":"偶考","l":5,"w":"loop","p":"luːp","d":"n. 圈；环；循环；环线","r":[]},{"i":1381,"s":"偶考","l":5,"w":"alert","p":"əˈlɜːt","d":"adj. 警惕的；机敏的 n. 警戒 vt. 使警觉","r":[]},{"i":1382,"s":"偶考","l":5,"w":"yawn","p":"jɔːn","d":"vi. 打哈欠 n. 哈欠","r":[]},{"i":1383,"s":"偶考","l":5,"w":"dusk","p":"dʌsk","d":"n. 傍晚；黄昏","r":[]},{"i":1384,"s":"偶考","l":5,"w":"muscle","p":"ˈmʌsl","d":"n. 肌肉；体力；影响力","r":[]},{"i":1385,"s":"偶考","l":5,"w":"lobby","p":"ˈlɒbi","d":"n. 大厅；游说（团体） v. 游说","r":[]},{"i":1386,"s":"偶考","l":6,"w":"drawer","p":"drɔː(r)","d":"n. 抽屉；开票人；出票人","r":[]},{"i":1387,"s":"偶考","l":6,"w":"multiple","p":"ˈmʌltɪpl","d":"adj. 多个的；多种的","r":[]},{"i":1388,"s":"偶考","l":6,"w":"treaty","p":"ˈtriːti","d":"n. 条约；协议；协定","r":[]},{"i":1389,"s":"偶考","l":6,"w":"liquor","p":"ˈlɪkə(r)","d":"n. 烈酒","r":[]},{"i":1390,"s":"偶考","l":6,"w":"quotation","p":"kwəʊˈteɪʃn","d":"n. 报价；引用；引文","r":[]},{"i":1391,"s":"偶考","l":6,"w":"donkey","p":"ˈdɒŋki","d":"n. 驴；笨蛋","r":[]},{"i":1392,"s":"偶考","l":6,"w":"mop","p":"mɒp","d":"n. 拖把；墩布 v. 用布擦掉；用拖把擦干净","r":[]},{"i":1393,"s":"偶考","l":6,"w":"likewise","p":"ˈlaɪkwaɪz","d":"adv. 同样地；也","r":[]},{"i":1394,"s":"偶考","l":6,"w":"dirt","p":"dɜːt","d":"n. 尘土；污物；污垢","r":[]},{"i":1395,"s":"偶考","l":6,"w":"resume","p":"rɪˈzjuːm","d":"v. 重新开始","r":[]},{"i":1396,"s":"偶考","l":6,"w":"lick","p":"lɪk","d":"vt. 舔 n. 少量","r":[]},{"i":1397,"s":"偶考","l":6,"w":"noticeable","p":"ˈnəʊtɪsəbl","d":"adj. 显而易见的；显著的","r":[]},{"i":1398,"s":"偶考","l":6,"w":"dialect","p":"ˈdaɪəlekt","d":"n. 方言；土语；地方话","r":[]},{"i":1399,"s":"偶考","l":6,"w":"restless","p":"ˈrestləs","d":"adj. 坐立不安的；不耐烦的","r":[]},{"i":1400,"s":"偶考","l":6,"w":"leisure","p":"ˈleʒə(r)","d":"n. 空闲；闲暇 adj. 空闲的；闲暇的","r":[]},{"i":1401,"s":"偶考","l":6,"w":"normally","p":"ˈnɔːməli","d":"adv. 通常地；正常地；平常地","r":[]},{"i":1402,"s":"偶考","l":6,"w":"wrist","p":"rɪst","d":"n. 手腕；腕关节","r":[]},{"i":1403,"s":"偶考","l":6,"w":"costly","p":"ˈkɒstli","d":"adj. 昂贵的；价钱高的；代价高的；损失大的","r":[]},{"i":1404,"s":"偶考","l":6,"w":"religious","p":"rɪˈlɪdʒəs","d":"adj. 宗教的；虔诚的","r":[]},{"i":1405,"s":"偶考","l":6,"w":"lease","p":"liːs","d":"n. 租约 vt. 出租；租用","r":[]},{"i":1406,"s":"偶考","l":7,"w":"nonsense","p":"ˈnɒnsns","d":"n. 胡说；废话；愚蠢的行为","r":[]},{"i":1407,"s":"偶考","l":7,"w":"cop","p":"kɒp","d":"n. 警察 vt. 遭受；抓住","r":[]},{"i":1408,"s":"偶考","l":7,"w":"lane","p":"leɪn","d":"n. （乡间）小路；跑道；泳道；车道；小巷","r":[]},{"i":1409,"s":"偶考","l":7,"w":"nightmare","p":"ˈnaɪtmeə(r)","d":"n. 噩梦；可怕的事物","r":[]},{"i":1410,"s":"偶考","l":7,"w":"commander","p":"kəˈmɑːndə(r)","d":"n. 司令官；指挥官","r":[]},{"i":1411,"s":"偶考","l":7,"w":"proportional","p":"prəˈpɔːʃənl","d":"adj. 成比例的；相称的","r":[]},{"i":1412,"s":"偶考","l":7,"w":"landlord","p":"ˈlændlɔːd","d":"n. 地主；房东；店主；业主","r":[]},{"i":1413,"s":"偶考","l":7,"w":"undergraduate","p":"ˌʌndəˈɡrædʒuət","d":"n. 大学本科生","r":[]},{"i":1414,"s":"偶考","l":7,"w":"chew","p":"tʃuː","d":"v. 咀嚼；嚼碎","r":[]},{"i":1415,"s":"偶考","l":7,"w":"visa","p":"ˈviːzə","d":"n. 签证","r":[]},{"i":1416,"s":"偶考","l":7,"w":"parliament","p":"ˈpɑːləmənt","d":"n. 议会；国会","r":[]},{"i":1417,"s":"偶考","l":7,"w":"knot","p":"nɒt","d":"n. 绳结；痉挛 v. 把……打成结","r":[]},{"i":1418,"s":"偶考","l":7,"w":"underneath","p":"ˌʌndəˈniːθ","d":"prep. 在……下面；在……底下","r":[]},{"i":1419,"s":"偶考","l":7,"w":"champagne","p":"ʃæmˈpeɪn","d":"n. 香槟酒","r":[]},{"i":1420,"s":"偶考","l":7,"w":"vitamin","p":"ˈvɪtəmɪn","d":"n. 维生素；维他命","r":[]},{"i":1421,"s":"偶考","l":7,"w":"hence","p":"hens","d":"adv. 因此；由此","r":[]},{"i":1422,"s":"偶考","l":7,"w":"upper","p":"ˈʌpə(r)","d":"adj. 上面的；较高的","r":[]},{"i":1423,"s":"偶考","l":7,"w":"unconscious","p":"ʌnˈkɒnʃəs","d":"adj. 不省人事的；无意识的","r":[]},{"i":1424,"s":"偶考","l":7,"w":"bunch","p":"bʌntʃ","d":"n. 串；束；扎 v. （使）打褶；（使）变紧","r":[]},{"i":1425,"s":"偶考","l":8,"w":"wicked","p":"ˈwɪkɪd","d":"adj. 邪恶的；淘气的","r":[]},{"i":1426,"s":"偶考","l":8,"w":"hell","p":"hel","d":"n. 地狱；苦难的经历；该死","r":[]},{"i":1427,"s":"偶考","l":8,"w":"utmost","p":"ˈʌtməʊst","d":"（亦作 uttermost）adj. 最大的；极度的 n. 极限","r":[]},{"i":1428,"s":"偶考","l":8,"w":"priest","p":"priːst","d":"n. 牧师；神父；祭司","r":[]},{"i":1429,"s":"偶考","l":8,"w":"bully","p":"ˈbʊli","d":"n. 横行霸道者 v. 恐吓；伤害；胁迫","r":[]},{"i":1430,"s":"偶考","l":8,"w":"worm","p":"wɜːm","d":"n. 蠕虫；可怜虫","r":[]},{"i":1431,"s":"偶考","l":8,"w":"pea","p":"piː","d":"n. 豌豆","r":[]},{"i":1432,"s":"偶考","l":8,"w":"hardware","p":"ˈhɑːdweə(r)","d":"n. 硬件；设备；工具","r":[]},{"i":1433,"s":"偶考","l":8,"w":"viewpoint","p":"ˈvjuːpɔɪnt","d":"n. 观点；意见；角度","r":[]},{"i":1434,"s":"偶考","l":8,"w":"bullet","p":"ˈbʊlɪt","d":"n. 枪弹；子弹；弹丸","r":[]},{"i":1435,"s":"偶考","l":8,"w":"troop","p":"truːp","d":"n. 一群士兵；群 v. 成群地走","r":[]},{"i":1436,"s":"偶考","l":8,"w":"platform","p":"ˈplætfɔːm","d":"n. 平台；站台；讲台；纲领","r":[]},{"i":1437,"s":"偶考","l":8,"w":"hardship","p":"ˈhɑːdʃɪp","d":"n. 艰难；困苦","r":[]},{"i":1438,"s":"偶考","l":8,"w":"mechanical","p":"məˈkænɪkl","d":"adj. 机械（驱动）的；机械般的","r":[]},{"i":1439,"s":"偶考","l":8,"w":"paste","p":"peɪst","d":"n. 酱；糨糊；面团 vt. 粘贴","r":[]},{"i":1440,"s":"偶考","l":8,"w":"budget","p":"ˈbʌdʒɪt","d":"n. 预算 v. 把……编入预算 adj. 价格低廉的","r":[]},{"i":1441,"s":"偶考","l":8,"w":"oval","p":"ˈəʊvl","d":"adj. 卵形的；椭圆的 n. 椭圆形；卵形","r":[]},{"i":1442,"s":"偶考","l":8,"w":"gulf","p":"ɡʌlf","d":"n. 鸿沟；分歧；隔阂","r":[]},{"i":1443,"s":"偶考","l":8,"w":"measurement","p":"ˈmeʒəmənt","d":"n. 测量；尺寸","r":[]},{"i":1444,"s":"偶考","l":8,"w":"buddy","p":"ˈbʌdi","d":"n. 朋友；同伴","r":[]},{"i":1445,"s":"偶考","l":9,"w":"outer","p":"ˈaʊtə(r)","d":"adj. 远离中心的；外面的","r":[]},{"i":1446,"s":"偶考","l":9,"w":"grin","p":"ɡrɪn","d":"v./n. 咧着嘴笑","r":[]},{"i":1447,"s":"偶考","l":9,"w":"maximum","p":"ˈmæksɪməm","d":"n. 最大量（值） adj. 最大量（值）的","r":[]},{"i":1448,"s":"偶考","l":9,"w":"bubble","p":"ˈbʌbl","d":"n. 泡 vi. 冒泡；沸腾；充满","r":[]},{"i":1449,"s":"偶考","l":9,"w":"ounce","p":"aʊns","d":"n. 盎司；一点点","r":[]},{"i":1450,"s":"偶考","l":9,"w":"grief","p":"ɡriːf","d":"n. 悲伤；悲痛心事；忧虑","r":[]},{"i":1451,"s":"偶考","l":9,"w":"mat","p":"mæt","d":"n. 小地毯；垫子","r":[]},{"i":1452,"s":"偶考","l":9,"w":"bang","p":"bæŋ","d":"n. 巨响；猛击 v. 猛敲；猛摔","r":[]},{"i":1453,"s":"偶考","l":9,"w":"governor","p":"ˈɡʌvənə(r)","d":"n. 主管；董事；总裁","r":[]},{"i":1454,"s":"偶考","l":9,"w":"marxist","p":"ˈmɑːksɪst","d":"n. 马克思主义者 adj. 马克思主义的","r":[]},{"i":1455,"s":"偶考","l":9,"w":"bandage","p":"ˈbændɪdʒ","d":"n. 绷带 vt. 用绷带包扎","r":[]},{"i":1456,"s":"偶考","l":9,"w":"oral","p":"ˈɔːrəl","d":"adj. 口头的；口腔的 n. 口试","r":[]},{"i":1457,"s":"偶考","l":9,"w":"goodness","p":"ˈɡʊdnəs","d":"int. 天哪 n. 善良；美德；精华","r":[]},{"i":1458,"s":"偶考","l":9,"w":"trash","p":"træʃ","d":"n. 垃圾；劣质品 vt. 捣毁","r":[]},{"i":1459,"s":"偶考","l":9,"w":"baggage","p":"ˈbæɡɪdʒ","d":"n. 行李","r":[]},{"i":1460,"s":"偶考","l":9,"w":"relativity","p":"ˌreləˈtɪvəti","d":"n. 相对论；相对性","r":[]},{"i":1461,"s":"偶考","l":9,"w":"ghost","p":"ɡəʊst","d":"n. 鬼；鬼魂；记忆","r":[]},{"i":1462,"s":"偶考","l":9,"w":"trademark","p":"ˈtreɪdmɑːk","d":"n. 商标；特征；标记","r":[]},{"i":1463,"s":"偶考","l":9,"w":"badge","p":"bædʒ","d":"n. 徽章；标记；象征","r":[]},{"i":1464,"s":"偶考","l":10,"w":"rat","p":"ræt","d":"n. 老鼠；卑鄙小人","r":[]},{"i":1465,"s":"偶考","l":10,"w":"germ","p":"dʒɜːm","d":"n. 细菌；微生物；萌芽；胚胎","r":[]},{"i":1466,"s":"偶考","l":10,"w":"toss","p":"tɒs","d":"v. 扔；抛；投；颠簸","r":[]},{"i":1467,"s":"偶考","l":10,"w":"auxiliary","p":"ɔːɡˈzɪliəri","d":"adj. 辅助的；备用的","r":[]},{"i":1468,"s":"偶考","l":10,"w":"ridge","p":"rɪdʒ","d":"n. 脊；山脉；垄","r":[]},{"i":1469,"s":"偶考","l":10,"w":"railroad","p":"ˈreɪlrəʊd","d":"n. 铁路 v. 迫使……做","r":[]},{"i":1470,"s":"偶考","l":10,"w":"generator","p":"ˈdʒenəreɪtə(r)","d":"n. 发电机；发生器；电力公司","r":[]},{"i":1471,"s":"偶考","l":10,"w":"tunnel","p":"ˈtʌnl","d":"n. 隧道；坑道；地道","r":[]},{"i":1472,"s":"偶考","l":10,"w":"torch","p":"tɔːtʃ","d":"n. 火炬；火把；手电筒","r":[]},{"i":1473,"s":"偶考","l":10,"w":"authentic","p":"ɔːˈθentɪk","d":"adj. 真正的；可靠的","r":[]},{"i":1474,"s":"偶考","l":10,"w":"moreover","p":"mɔːrˈəʊvə(r)","d":"adv. 而且；此外","r":[]},{"i":1475,"s":"偶考","l":10,"w":"rag","p":"ræɡ","d":"n. 破布；抹布","r":[]},{"i":1476,"s":"偶考","l":10,"w":"forum","p":"ˈfɔːrəm","d":"n. 论坛；讨论会","r":[]},{"i":1477,"s":"偶考","l":10,"w":"paw","p":"pɔː","d":"n. 爪 v. 用爪；抓","r":[]},{"i":1478,"s":"偶考","l":10,"w":"token","p":"ˈtəʊkən","d":"n. 代币；象征 adj. 装样子的","r":[]},{"i":1479,"s":"偶考","l":10,"w":"attorney","p":"əˈtɜːni","d":"n. 律师","r":[]},{"i":1480,"s":"偶考","l":10,"w":"throat","p":"θrəʊt","d":"n. 咽喉；喉咙","r":[]},{"i":1481,"s":"偶考","l":10,"w":"racial","p":"ˈreɪʃl","d":"adj. 种族的；人种的","r":[]},{"i":1482,"s":"偶考","l":10,"w":"oven","p":"ˈʌvn","d":"n. 烤箱","r":[]},{"i":1483,"s":"偶考","l":10,"w":"microphone","p":"ˈmaɪkrəfəʊn","d":"n. 话筒；麦克风；传声器","r":[["microscope","ˈmaɪkrəskəʊp","n. 显微镜"],["microwave","ˈmaɪkrəweɪv","n. 微波炉"]]}];
+var DAY = 86400000, MIN = 60000;
+var BOX_DAYS = {1:1, 2:2, 3:4, 4:8, 5:16, 6:32};
+var KEY = 'cet4_1500_v1';
+
+var S = load();
+var view = 'study';
+var cur = null;        // 当前词
+var flipped = false;
+var queue = [];        // 本轮队列（词 id）
+var roundTotal = 0;
+var answered = 0;
+
+function load() {
+  var raw = localStorage.getItem(KEY);
+  var d = raw ? JSON.parse(raw) : {};
+  d.w = d.w || {};                 // id -> {b,due,n,ok,bad,last}
+  d.days = d.days || {};           // 'YYYY-MM-DD' -> {n:newCnt, r:revCnt}
+  d.cfg = d.cfg || { daily: 60, speak: true, theme: 'auto' };
+  if (!d.cfg.theme) d.cfg.theme = 'auto';
+  return d;
+}
+function save() { localStorage.setItem(KEY, JSON.stringify(S)); }
+
+function today() {
+  var t = new Date();
+  return t.getFullYear() + '-' + pad(t.getMonth() + 1) + '-' + pad(t.getDate());
+}
+function pad(n) { return n < 10 ? '0' + n : '' + n; }
+function dayStat() {
+  var k = today();
+  S.days[k] = S.days[k] || { n: 0, r: 0 };
+  return S.days[k];
+}
+function state(id) { return S.w[id] || null; }
+function box(id) { var s = S.w[id]; return s ? s.b : 0; }
+
+function applyTheme() {
+  var t = S.cfg.theme || 'auto';
+  var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  var dark = t === 'dark' || (t === 'auto' && prefersDark);
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  var m = document.querySelector('meta[name=theme-color]');
+  if (m) m.setAttribute('content', dark ? '#151517' : '#f7f6f3');
+}
+function setTheme(t) {
+  S.cfg.theme = t; save(); applyTheme();
+  if (view === 'me') renderMe();
+}
+function forecastDays() {
+  var d0 = new Date(); d0.setHours(0, 0, 0, 0);
+  var start = d0.getTime();
+  var buckets = [0, 0, 0, 0, 0, 0, 0];
+  for (var i = 0; i < WORDS.length; i++) {
+    var s = S.w[WORDS[i].i];
+    if (!s || s.b < 1) continue;
+    var idx = Math.floor((s.due - start) / DAY);
+    if (idx < 0) idx = 0;
+    if (idx < 7) buckets[idx]++;
+  }
+  return buckets;
+}
+
+function toast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('on');
+  clearTimeout(t._h);
+  t._h = setTimeout(function () { t.classList.remove('on'); }, 1500);
+}
+
+function speak(text) {
+  if (!S.cfg.speak) return;
+  if (!window.speechSynthesis) return;
+  try {
+    speechSynthesis.cancel();
+    var u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
+    u.rate = .85;
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+
+/* ---------- 队列 ---------- */
+function buildQueue() {
+  var now = Date.now();
+  var due = [], neu = [];
+  for (var i = 0; i < WORDS.length; i++) {
+    var w = WORDS[i], s = S.w[w.i];
+    if (!s) { neu.push(w.i); continue; }
+    if (s.b > 0 && s.b < 6 && s.due <= now) due.push(w.i);
+    else if (s.b >= 6 && s.due <= now) due.push(w.i);
+  }
+  due.sort(function (a, b) { return S.w[a].due - S.w[b].due; });
+  var st = dayStat();
+  var quota = Math.max(0, S.cfg.daily - st.n);
+  neu = neu.slice(0, quota);
+  var q = [], di = 0, ni = 0;
+  while (di < due.length || ni < neu.length) {
+    for (var k = 0; k < 2 && di < due.length; k++) q.push(due[di++]);
+    if (ni < neu.length) q.push(neu[ni++]);
+  }
+  return q;
+}
+
+function startSession() {
+  queue = buildQueue();
+  answered = 0;
+  roundTotal = queue.length;
+  renderStudy();
+}
+
+/* ---------- 背词视图 ---------- */
+function renderStudy() {
+  var el = document.getElementById('studyBody');
+  if (!queue.length) {
+    var st = dayStat();
+    var learned = 0, total = WORDS.length;
+    for (var i = 0; i < WORDS.length; i++) if (S.w[WORDS[i].i]) learned++;
+    el.innerHTML =
+      '<div class="empty"><div class="big">✓</div>' +
+      '<div style="font-weight:600;color:var(--tx);font-size:16px;margin-bottom:6px">这一轮走完了</div>' +
+      '<div>今日新学 ' + st.n + ' · 复习 ' + st.r + ' 次<br>词库已学 ' + learned + ' / ' + total + '</div>' +
+      '</div>' +
+      '<button class="btn ghost" onclick="startSession()">重新检查有没有漏的</button>';
+    updateHead();
+    return;
+  }
+  var w = WORDS[queue[0] - 1];
+  cur = w; flipped = false;
+  var rel = '';
+  if (w.r && w.r.length) {
+    rel = '<div class="relbox"><div class="reltitle">派生 / 同族</div>' + w.r.map(function (x) {
+      return '<div class="relrow"><b>' + esc(x[0]) + '</b> <span style="font-size:12px">/' + esc(x[1]) + '/</span> ' + esc(x[2]) + '</div>';
+    }).join('') + '</div>';
+  }
+  var startPct = roundTotal ? Math.round(answered / roundTotal * 100) : 0;
+  el.innerHTML =
+    '<div class="bar" style="margin-bottom:12px"><i id="sbar" style="width:' + startPct + '%"></i></div>' +
+    '<div class="cardwrap"><div class="wordcard" id="wcard" onclick="flipCard()">' +
+      '<div class="face">' +
+        '<div class="fmeta"><span>' + w.s + ' · List ' + w.l + '</span><span>' + (answered + 1) + ' / ' + roundTotal + '</span></div>' +
+        '<div class="fcenter">' +
+          '<div class="bigword">' + esc(w.w) + '</div>' +
+          '<div class="ipa">/' + esc(w.p) + '/</div>' +
+          '<div class="spk" onclick="event.stopPropagation();speak(\'' + esc(w.w).replace(/'/g, "\\'") + '\')">' +
+            '<svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>' +
+          '</div>' +
+          '<div class="hint">点一下翻面</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="face back">' +
+        '<div class="fmeta"><span>' + w.s + ' · List ' + w.l + '</span><span class="ftag">已翻面</span></div>' +
+        '<div class="binner">' +
+          '<div class="backword">' + esc(w.w) + ' <span style="font-size:12px">/' + esc(w.p) + '/</span></div>' +
+          '<div class="backdef">' + esc(w.d) + '</div>' + rel +
+        '</div>' +
+      '</div>' +
+    '</div></div>' +
+    '<div class="rate" id="rate" hidden>' +
+      '<button class="no" onclick="rate(0)">不认识<span class="k">10 分钟后再来</span></button>' +
+      '<button class="mid" onclick="rate(1)">模糊<span class="k">明天再见</span></button>' +
+      '<button class="yes" onclick="rate(2)">认识<span class="k" id="ivTip">隔 2 天</span></button>' +
+    '</div>';
+  var tip = document.getElementById('ivTip');
+  var s = state(w.i);
+  if (tip && s && s.b >= 1) tip.textContent = '隔 ' + (BOX_DAYS[Math.min(6, s.b + 1)] || 2) + ' 天';
+  updateHead();
+  if (S.cfg.speak) speak(w.w);
+}
+
+function flipCard() {
+  flipped = !flipped;
+  var c = document.getElementById('wcard');
+  if (!c) return;
+  c.classList.toggle('flip', flipped);
+  document.getElementById('rate').hidden = !flipped;
+}
+
+function rate(kind) {
+  if (!cur) return;
+  var w = cur, id = w.i, s = S.w[id], now = Date.now();
+  var st = dayStat();
+  var isNew = !s;
+  if (!s) s = S.w[id] = { b: 0, due: 0, n: 0, ok: 0, bad: 0 };
+  s.n++; s.last = now;
+  if (kind === 0) {
+    s.b = 1; s.bad++; s.due = now + 10 * MIN;
+  } else if (kind === 1) {
+    s.b = Math.max(1, s.b || 1);
+    s.due = now + (BOX_DAYS[s.b] || 1) * 0.5 * DAY;
+  } else {
+    s.ok++;
+    var nb = isNew ? 2 : (s.b || 0) + 1;
+    s.b = Math.min(6, nb);
+    s.due = now + (BOX_DAYS[s.b] || 1) * DAY;
+  }
+  if (isNew) st.n++; else st.r++;
+  queue.shift();
+  answered++;
+  if (kind === 0) {
+    var pos = Math.min(3, queue.length);
+    queue.splice(pos, 0, id);
+    roundTotal++;
+  }
+  save();
+  renderStudy();
+}
+
+function updateHead() {
+  var st = dayStat();
+  var goal = S.cfg.daily;
+  var pct = Math.min(100, Math.round(st.n / goal * 100));
+  document.getElementById('hSub').textContent = '今日新学 ' + st.n + ' / ' + goal;
+  document.getElementById('hPct').textContent = pct + '%';
+  document.getElementById('hRing').setAttribute('stroke-dashoffset', (169.6 * (1 - pct / 100)).toFixed(1));
+}
+
+/* ---------- 测练 ---------- */
+var Q = null;
+
+function renderQuiz() {
+  var el = document.getElementById('quizBody');
+  var st = dayStat();
+  var learned = 0, wrong = 0;
+  for (var i = 0; i < WORDS.length; i++) {
+    var s = S.w[WORDS[i].i];
+    if (s) { learned++; if (s.bad > 0 && s.b < 4) wrong++; }
+  }
+  if (Q) { return renderQuestion(); }
+  el.innerHTML =
+    '<div class="stat">' +
+      '<div class="box"><div class="lb">已学词</div><div class="num">' + learned + '<small> / ' + WORDS.length + '</small></div></div>' +
+      '<div class="box"><div class="lb">待攻克错词</div><div class="num">' + wrong + '<small> 个</small></div></div>' +
+    '</div>' +
+    '<div class="sec"><div class="sech"><h3>选择题</h3><span>10 题 · 中英互译</span></div>' +
+      '<button class="btn" onclick="startQuiz(\'choice\')">开始一轮</button></div>' +
+    '<div class="sec"><div class="sech"><h3>拼写题</h3><span>10 题 · 看释义默写</span></div>' +
+      '<button class="btn" onclick="startQuiz(\'spell\')">开始一轮</button></div>' +
+    '<div class="sec"><div class="sech"><h3>错词专项</h3><span>只考答错过的词</span></div>' +
+      '<button class="btn ghost" onclick="startQuiz(\'choice\',true)"' +
+      (wrong ? '' : ' disabled style="opacity:.45"') + '>开始（' + wrong + ' 个）</button></div>' +
+    '<div class="sec"><div class="sech"><h3>错词本</h3><span>' + wrong + ' 个待复习</span></div>' +
+      '<div class="card" id="wrongList"></div></div>';
+  renderWrongList();
+}
+
+function renderWrongList() {
+  var box = document.getElementById('wrongList');
+  if (!box) return;
+  var arr = [];
+  for (var i = 0; i < WORDS.length; i++) {
+    var s = S.w[WORDS[i].i];
+    if (s && s.bad > 0 && s.b < 4) arr.push({ w: WORDS[i], s: s });
+  }
+  arr.sort(function (a, b) { return b.s.bad - a.s.bad; });
+  if (!arr.length) { box.innerHTML = '<div class="empty" style="padding:28px">还没有错词，继续背就对了</div>'; return; }
+  box.innerHTML = arr.slice(0, 40).map(function (o) {
+    return '<div class="row" onclick="showWord(' + o.w.i + ')">' +
+      '<div class="grow"><div class="w">' + esc(o.w.w) + ' <span style="font-size:11px;color:var(--tx3)">/' + esc(o.w.p) + '/</span></div>' +
+      '<div class="d">' + esc(o.w.d) + '</div></div>' +
+      '<span style="font-size:12px;color:var(--red)">错' + o.s.bad + '</span></div>';
+  }).join('');
+}
+
+function startQuiz(mode, wrongOnly) {
+  var pool = [];
+  for (var i = 0; i < WORDS.length; i++) {
+    var s = S.w[WORDS[i].i];
+    if (!s) continue;
+    if (wrongOnly && !(s.bad > 0 && s.b < 4)) continue;
+    pool.push(WORDS[i]);
+  }
+  if (!pool.length) {
+    toast(wrongOnly ? '目前没有错词，很干净' : '还没背过词，先去背几张卡片');
+    return;
+  }
+  if (!wrongOnly && pool.length < 8) {
+    pool = WORDS.slice(0, 80);
+    toast('词量还少，先拿词库前 80 个练手');
+  }
+  var picks = shuffle(pool.slice()).slice(0, 10);
+  Q = { mode: mode, list: picks, idx: 0, right: 0, wrongs: [], wrongOnly: !!wrongOnly };
+  renderQuestion();
+}
+
+function renderQuestion() {
+  var el = document.getElementById('quizBody');
+  if (Q.idx >= Q.list.length) return renderQuizResult();
+  var w = Q.list[Q.idx];
+  var head = '<div class="bar" style="margin-bottom:14px"><i style="width:' +
+    (Q.idx / Q.list.length * 100) + '%"></i></div>' +
+    '<div style="font-size:12px;color:var(--tx3);text-align:center;margin-bottom:6px">第 ' +
+    (Q.idx + 1) + ' / ' + Q.list.length + ' 题 · 答对 ' + Q.right + '</div>';
+
+  if (Q.mode === 'choice') {
+    var zh2en = Q.idx % 2 === 1;
+    var opts = [w];
+    var guard = 0;
+    while (opts.length < 4 && guard++ < 400) {
+      var c = WORDS[Math.floor(Math.random() * WORDS.length)];
+      if (c.i === w.i) continue;
+      var same = opts.some(function (o) { return o.d === c.d || o.w === c.w; });
+      if (!same) opts.push(c);
+    }
+    opts = shuffle(opts);
+    el.innerHTML = head +
+      '<div class="quizq">' + (zh2en
+        ? '<div class="q" style="font-size:20px;line-height:1.5">' + esc(w.d) + '</div>' +
+          '<div class="qi">选出对应的英文</div>'
+        : '<div class="q">' + esc(w.w) + '</div><div class="qi">/' + esc(w.p) + '/</div>') + '</div>' +
+      '<div class="opts" id="opts">' + opts.map(function (o, k) {
+        return '<button data-ok="' + (o.i === w.i) + '" onclick="answerChoice(this,' + o.i + ')">' +
+          (zh2en ? esc(o.w) : esc(o.d)) + '</button>';
+      }).join('') + '</div>';
+    if (!zh2en && S.cfg.speak) speak(w.w);
+  } else {
+    el.innerHTML = head +
+      '<div class="quizq"><div class="q" style="font-size:19px;line-height:1.6">' + esc(w.d) + '</div>' +
+      '<div class="qi">' + w.s + ' · List ' + w.l + '</div></div>' +
+      '<div class="spellhint">' + hintOf(w.w) + '</div>' +
+      '<input class="spell" id="spellIn" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="输入单词">' +
+      '<div style="height:12px"></div>' +
+      '<button class="btn" onclick="answerSpell()">提交</button>' +
+      '<div style="height:8px"></div>' +
+      '<button class="btn ghost" onclick="revealSpell()">想不起来，看答案</button>';
+    var inp = document.getElementById('spellIn');
+    inp.focus();
+    inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') answerSpell(); });
+  }
+}
+
+function hintOf(w) {
+  var out = '';
+  for (var i = 0; i < w.length; i++) {
+    out += (i === 0 || w[i] === '-' || w[i] === ' ') ? w[i] : '_';
+  }
+  return out + '　(' + w.length + ')';
+}
+
+function answerChoice(btn, id) {
+  var w = Q.list[Q.idx];
+  var ok = id === w.i;
+  var bs = document.querySelectorAll('#opts button');
+  for (var i = 0; i < bs.length; i++) {
+    bs[i].disabled = true;
+    if (bs[i].dataset.ok === 'true') bs[i].classList.add('ok');
+  }
+  if (!ok) btn.classList.add('bad');
+  markQ(w, ok);
+  setTimeout(function () { Q.idx++; renderQuestion(); }, ok ? 380 : 1100);
+}
+
+function answerSpell() {
+  var w = Q.list[Q.idx];
+  var v = (document.getElementById('spellIn').value || '').trim().toLowerCase();
+  if (!v) return;
+  var ok = v === w.w.toLowerCase();
+  var inp = document.getElementById('spellIn');
+  inp.disabled = true;
+  inp.style.color = ok ? 'var(--green)' : 'var(--red)';
+  if (!ok) {
+    toast('正确拼写：' + w.w);
+    inp.value = w.w;
+  }
+  markQ(w, ok);
+  setTimeout(function () { Q.idx++; renderQuestion(); }, ok ? 420 : 1400);
+}
+
+function revealSpell() {
+  var w = Q.list[Q.idx];
+  document.getElementById('spellIn').disabled = true;
+  document.getElementById('spellIn').value = w.w;
+  markQ(w, false);
+  setTimeout(function () { Q.idx++; renderQuestion(); }, 1200);
+}
+
+function markQ(w, ok) {
+  var s = S.w[w.i];
+  if (!s) s = S.w[w.i] = { b: 1, due: Date.now() + DAY, n: 0, ok: 0, bad: 0 };
+  s.n++;
+  if (ok) { s.ok++; Q.right++; }
+  else { s.bad++; s.b = 1; s.due = Date.now() + 10 * MIN; Q.wrongs.push(w.w); }
+  save();
+}
+
+function renderQuizResult() {
+  var el = document.getElementById('quizBody');
+  var n = Q.list.length, r = Q.right;
+  var pct = Math.round(r / n * 100);
+  var msg = pct >= 90 ? '状态很好，这批词稳了' : pct >= 70 ? '还行，错的再看两眼' : pct >= 50 ? '错的有点多，回去过一遍卡片' : '这批词还没进脑子，先背卡片吧';
+  el.innerHTML =
+    '<div class="empty"><div style="font-size:44px;font-weight:600;color:var(--tx)">' + pct + '%</div>' +
+    '<div style="margin-top:6px">答对 ' + r + ' / ' + n + ' 题</div>' +
+    '<div style="margin-top:10px;color:var(--tx3);font-size:13px">' + msg + '</div></div>' +
+    (Q.wrongs.length ? '<div style="font-size:12px;color:var(--tx3);margin:4px 0 8px">这轮错的词</div>' +
+      '<div class="card" style="padding:12px 14px;font-size:14px;line-height:1.9;color:var(--tx2)">' +
+      Q.wrongs.join(' · ') + '</div>' : '') +
+    '<div style="height:16px"></div>' +
+    '<button class="btn" onclick="startQuiz(\'' + Q.mode + '\',' + (Q.wrongOnly ? 'true' : 'false') + ')">再来一轮</button>' +
+    '<div style="height:8px"></div>' +
+    '<button class="btn ghost" onclick="Q=null;renderQuiz()">返回</button>';
+}
+
+/* ---------- 词库 ---------- */
+var libSec = '高频', libList = 0, libSearch = '';
+
+function renderLib() {
+  var secs = ['高频', '基础', '偶考'];
+  var tabs = document.getElementById('secTabs');
+  tabs.innerHTML = secs.map(function (s) {
+    var n = WORDS.filter(function (w) { return w.s === s; }).length;
+    return '<button class="' + (s === libSec ? 'on' : '') + '" onclick="libSec=\'' + s + '\';libList=0;renderLib()">' + s + '词 ' + n + '</button>';
+  }).join('');
+
+  var lists = [];
+  WORDS.forEach(function (w) { if (w.s === libSec && lists.indexOf(w.l) < 0) lists.push(w.l); });
+  lists.sort(function (a, b) { return a - b; });
+  var lt = document.getElementById('listTabs');
+  lt.innerHTML = '<button class="' + (libList === 0 ? 'on' : '') + '" onclick="libList=0;renderLib()">全部</button>' +
+    lists.map(function (l) {
+      return '<button class="' + (l === libList ? 'on' : '') + '" onclick="libList=' + l + ';renderLib()">L' + l + '</button>';
+    }).join('');
+
+  var arr = WORDS.filter(function (w) {
+    if (libSearch) {
+      var q = libSearch.toLowerCase();
+      return w.w.toLowerCase().indexOf(q) >= 0 || w.d.indexOf(libSearch) >= 0;
+    }
+    return w.s === libSec && (libList === 0 || w.l === libList);
+  });
+  var boxEl = document.getElementById('libList');
+  if (!arr.length) { boxEl.innerHTML = '<div class="empty">没找到这个词</div>'; return; }
+  boxEl.innerHTML = arr.map(function (w) {
+    var b = box(w.i);
+    var cls = b === 0 ? '' : b >= 4 ? 's3' : b >= 2 ? 's2' : 's1';
+    return '<div class="row" onclick="showWord(' + w.i + ')">' +
+      '<span class="dot ' + cls + '"></span>' +
+      '<div class="grow"><div class="w">' + esc(w.w) + '</div><div class="d">' + esc(w.d) + '</div></div>' +
+      '</div>';
+  }).join('');
+  document.getElementById('hTitle').textContent = '词库';
+  document.getElementById('hSub').textContent = arr.length + ' 个词';
+}
+
+function showWord(id) {
+  var w = WORDS[id - 1];
+  var s = S.w[id];
+  var rel = (w.r && w.r.length) ? '<div class="relbox"><div class="reltitle">派生 / 同族</div>' +
+    w.r.map(function (x) {
+      return '<div class="relrow"><b>' + esc(x[0]) + '</b> <span style="font-size:12px">/' + esc(x[1]) + '/</span> ' + esc(x[2]) + '</div>';
+    }).join('') + '</div>' : '';
+  var st = s ? ('复习 ' + s.n + ' 次 · 答对 ' + s.ok + ' · 答错 ' + s.bad) : '还没学过';
+  var boxl = s ? ('当前阶段 ' + s.b + ' / 6') : '';
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.32);z-index:60;display:flex;align-items:flex-end';
+  ov.onclick = function (e) { if (e.target === ov) document.body.removeChild(ov); };
+  ov.innerHTML = '<div style="background:var(--card);color:var(--tx);width:100%;max-width:560px;margin:0 auto;border-radius:18px 18px 0 0;padding:22px 20px calc(24px + env(safe-area-inset-bottom))">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between">' +
+      '<div><div style="font-size:26px;font-weight:600">' + esc(w.w) + '</div>' +
+      '<div style="font-size:14px;color:var(--tx2);margin-top:4px">/' + esc(w.p) + '/</div></div>' +
+      '<button onclick="speak(\'' + esc(w.w).replace(/'/g, "\\'") + '\')" style="width:42px;height:42px;border-radius:50%;border:1px solid var(--line2)">' +
+      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b6a66" stroke-width="1.7"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg></button>' +
+    '</div>' +
+    '<div style="font-size:17px;font-weight:600;margin-top:16px;line-height:1.55">' + esc(w.d) + '</div>' + rel +
+    '<div style="margin-top:16px;font-size:12px;color:var(--tx3)">' + w.s + '词 · List ' + w.l + ' · ' + st + (boxl ? ' · ' + boxl : '') + '</div>' +
+    '</div>';
+  document.body.appendChild(ov);
+  speak(w.w);
+}
+
+/* ---------- 我的 ---------- */
+function renderMe() {
+  var learned = 0, mastered = 0, total = WORDS.length;
+  for (var i = 0; i < WORDS.length; i++) {
+    var s = S.w[WORDS[i].i];
+    if (s) { learned++; if (s.b >= 4) mastered++; }
+  }
+  var st = dayStat();
+  var streak = calcStreak();
+  var dueToday = 0, now = Date.now();
+  for (var j = 0; j < WORDS.length; j++) {
+    var t = S.w[WORDS[j].i];
+    if (t && t.b > 0 && t.due <= now) dueToday++;
+  }
+  var secBars = ['高频', '基础', '偶考'].map(function (sec) {
+    var all = WORDS.filter(function (w) { return w.s === sec; });
+    var done = all.filter(function (w) { return S.w[w.i] && S.w[w.i].b >= 4; }).length;
+    var p = Math.round(done / all.length * 100);
+    return '<div style="margin-top:14px"><div class="sech"><h3>' + sec + '词</h3>' +
+      '<span>' + done + ' / ' + all.length + ' 掌握</span></div>' +
+      '<div class="bar"><i style="width:' + p + '%"></i></div></div>';
+  }).join('');
+
+  var bakTxt, bakWarn = false;
+  if (S.cfg.lastBak) {
+    var bd = Math.floor((Date.now() - S.cfg.lastBak) / DAY);
+    bakTxt = bd <= 0 ? '今天已备份' : (bd + ' 天前备份过');
+    bakWarn = bd >= 7;
+    if (bakWarn) bakTxt = bd + ' 天没备份了，建议导出一份';
+  } else {
+    bakTxt = learned > 0 ? '还没备份过，建议导出一份' : '存成文件，换手机时带得走';
+    bakWarn = learned > 0;
+  }
+
+  var fc = forecastDays();
+  var fmax = Math.max.apply(null, fc.concat([1]));
+  var wk = '日一二三四五六';
+  var d0 = new Date(); d0.setHours(0, 0, 0, 0);
+  var chart = '<div class="forecast">' + fc.map(function (n, i) {
+    var dt = new Date(d0.getTime() + i * DAY);
+    var lab = i === 0 ? '今天' : i === 1 ? '明天' : '周' + wk.charAt(dt.getDay());
+    var h = n === 0 ? 3 : Math.max(4, Math.round(n / fmax * 58));
+    return '<div class="col">' +
+      '<div class="cnum">' + (n || '') + '</div>' +
+      '<div class="cbar ' + (n ? '' : 'zero') + '" style="height:' + h + 'px"></div>' +
+      '<div class="clab">' + lab + '</div></div>';
+  }).join('') + '</div>';
+
+  document.getElementById('meBody').innerHTML =
+    '<div class="stat">' +
+      '<div class="box"><div class="lb">已学</div><div class="num">' + learned + '<small> / ' + total + '</small></div></div>' +
+      '<div class="box"><div class="lb">已掌握</div><div class="num">' + mastered + '<small> 个</small></div></div>' +
+      '<div class="box"><div class="lb">今日待复习</div><div class="num">' + dueToday + '<small> 个</small></div></div>' +
+      '<div class="box"><div class="lb">连续打卡</div><div class="num">' + streak + '<small> 天</small></div></div>' +
+    '</div>' +
+    '<div class="sec"><div class="sech"><h3>未来 7 天</h3><span>每天要复习的词量</span></div>' +
+      '<div class="card" style="padding:12px 14px 10px">' + chart + '</div></div>' +
+    '<div class="sec"><div class="sech"><h3>章节进度</h3><span>掌握 = 复习满 4 轮</span></div>' +
+      '<div class="card" style="padding:6px 14px 18px">' + secBars + '</div></div>' +
+    '<div class="sec"><div class="sech"><h3>设置</h3></div>' +
+      '<div class="card">' +
+        '<div class="setrow"><div><div class="lab">每日新词</div><div class="sub">现在 ' + S.cfg.daily + ' 个</div></div>' +
+          '<input type="range" min="20" max="150" step="10" value="' + S.cfg.daily + '" oninput="setDaily(this.value)"></div>' +
+        '<div class="setrow"><div><div class="lab">外观</div><div class="sub">夜间背词不刺眼</div></div>' +
+          '<div class="seg">' + [['auto', '自动'], ['light', '浅色'], ['dark', '深色']].map(function (o) {
+            return '<button class="' + ((S.cfg.theme || 'auto') === o[0] ? 'on' : '') + '" onclick="setTheme(\'' + o[0] + '\')">' + o[1] + '</button>';
+          }).join('') + '</div></div>' +
+        '<div class="setrow"><div><div class="lab">自动朗读</div><div class="sub">翻开新卡片时读一遍</div></div>' +
+          '<div class="sw ' + (S.cfg.speak ? 'on' : '') + '" onclick="toggleSpeak(this)"><i></i></div></div>' +
+        '<div class="setrow" onclick="exportData()"><div><div class="lab">导出进度</div>' +
+          '<div class="sub"' + (bakWarn ? ' style="color:var(--amber)"' : '') + '>' + esc(bakTxt) + '</div></div>' +
+          '<span style="color:var(--tx3);font-size:13px">下载</span></div>' +
+        '<div class="setrow" onclick="pickImport()"><div><div class="lab">导入进度</div>' +
+          '<div class="sub">选择之前导出的 json 文件</div></div>' +
+          '<span style="color:var(--tx3);font-size:13px">选择</span></div>' +
+        '<div class="setrow" onclick="resetAll()"><div class="lab" style="color:var(--red)">清空学习进度</div>' +
+          '<span style="color:var(--tx3);font-size:13px">需确认</span></div>' +
+      '</div></div>' +
+    '<div class="sec"><div class="sech"><h3>关于</h3></div>' +
+      '<div class="card" style="padding:14px;font-size:13px;color:var(--tx2);line-height:1.7">' +
+      '词表来自你提供的《四级高频核心1500词》，共 ' + total + ' 个主词（含派生词 ' +
+      WORDS.reduce(function (a, w) { return a + (w.r ? w.r.length : 0); }, 0) + ' 个），分高频 / 基础 / 偶考三部分。' +
+      '进度存在本机浏览器里，换设备不会同步。</div></div>';
+  document.getElementById('hTitle').textContent = '我的';
+  document.getElementById('hSub').textContent = '已学 ' + learned + ' / ' + total;
+}
+
+function setDaily(v) {
+  S.cfg.daily = parseInt(v, 10); save(); updateHead();
+  var st = document.querySelectorAll('.setrow .sub');
+  if (st[0]) st[0].textContent = '现在 ' + S.cfg.daily + ' 个';
+}
+function toggleSpeak(el) {
+  S.cfg.speak = !S.cfg.speak; save();
+  el.classList.toggle('on', S.cfg.speak);
+  if (S.cfg.speak) speak('hello');
+}
+
+function exportData() {
+  var payload = JSON.stringify(S);
+  try {
+    var blob = new Blob([payload], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'cet4-progress-' + today() + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+    S.cfg.lastBak = Date.now(); save();
+    if (view === 'me') renderMe();
+    toast('已导出到下载文件夹');
+  } catch (e) {
+    prompt('复制下面这段文字保存好：', payload);
+  }
+}
+
+function pickImport() {
+  var inp = document.getElementById('impFile');
+  if (inp) inp.click();
+}
+
+function onImpFile(inp) {
+  var f = inp.files && inp.files[0];
+  if (!f) return;
+  var rd = new FileReader();
+  rd.onload = function () { applyImport(rd.result); };
+  rd.readAsText(f);
+  inp.value = '';
+}
+
+function applyImport(txt) {
+  try {
+    var d = JSON.parse(txt);
+    if (!d || typeof d !== 'object' || !d.w || !d.days) throw new Error('bad');
+    S = d;
+    if (!S.cfg) S.cfg = { daily: 60, speak: true };
+    save();
+    queue = []; Q = null;
+    toast('已导入 ' + Object.keys(S.w).length + ' 个词的学习记录');
+    go('me');
+  } catch (e) {
+    toast('这个文件不是本程序的进度数据');
+  }
+}
+function resetAll() {  if (!confirm('清空所有学习记录？这个操作无法撤销。')) return;
+  localStorage.removeItem(KEY);
+  S = load(); queue = []; Q = null;
+  toast('已清空');
+  renderAll();
+}
+
+function calcStreak() {
+  var n = 0, d = new Date();
+  for (var i = 0; i < 400; i++) {
+    var k = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+    var rec = S.days[k];
+    if (rec && (rec.n > 0 || rec.r > 0)) { n++; d.setDate(d.getDate() - 1); }
+    else if (i === 0) { d.setDate(d.getDate() - 1); }
+    else break;
+  }
+  return n;
+}
+
+/* ---------- 通用 ---------- */
+function esc(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function shuffle(a) {
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+function go(v) {
+  view = v;
+  var vs = document.querySelectorAll('.view'), bs = document.querySelectorAll('nav button');
+  for (var i = 0; i < vs.length; i++) vs[i].classList.toggle('on', vs[i].id === 'v-' + v);
+  for (var j = 0; j < bs.length; j++) bs[j].classList.toggle('on', bs[j].dataset.v === v);
+  var ring = document.querySelector('.hprog');
+  ring.style.visibility = v === 'study' ? 'visible' : 'hidden';
+  var titles = { study: '背词', quiz: '测练', lib: '词库', me: '我的' };
+  document.getElementById('hTitle').textContent = titles[v] || '';
+  if (v === 'study') {
+    if (!queue.length) startSession(); else updateHead();
+  }
+  if (v === 'quiz') { Q = null; renderQuiz(); document.getElementById('hSub').textContent = '选择题 / 拼写 / 错词本'; }
+  if (v === 'lib') { renderLib(); }
+  if (v === 'me') { renderMe(); }
+  window.scrollTo(0, 0);
+}
+function renderAll() { go(view); }
+
+document.querySelectorAll('nav button').forEach(function (b) {
+  b.onclick = function () { go(b.dataset.v); };
+});
+
+document.getElementById('search').addEventListener('input', function (e) {
+  libSearch = e.target.value.trim();
+  renderLib();
+});
+
+// 滑动手势
+(function () {
+  var sx = 0, sy = 0, active = false;
+  document.addEventListener('touchstart', function (e) {
+    if (!e.target.closest('.wordcard')) return;
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY; active = true;
+  }, { passive: true });
+  document.addEventListener('touchend', function (e) {
+    if (!active) return; active = false;
+    var dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+    if (Math.abs(dx) < 70 || Math.abs(dy) > 60) return;
+    if (!flipped) { flipCard(); return; }
+    rate(dx > 0 ? 2 : 0);
+  }, { passive: true });
+})();
+
+// 键盘
+document.addEventListener('keydown', function (e) {
+  if (view !== 'study' || !cur) return;
+  if (e.target.tagName === 'INPUT') return;
+  if (e.code === 'Space') { e.preventDefault(); flipCard(); }
+  if (flipped && (e.key === '1' || e.key === '2' || e.key === '3')) rate(parseInt(e.key, 10) - 1);
+  if (e.key === 's') speak(cur.w);
+});
+
+if (window.matchMedia) {
+  var mq = window.matchMedia('(prefers-color-scheme: dark)');
+  var onScheme = function () { if ((S.cfg.theme || 'auto') === 'auto') applyTheme(); };
+  if (mq.addEventListener) mq.addEventListener('change', onScheme);
+}
+
+applyTheme();
+startSession();
+updateHead();
+</script>
+<script>
+if ("serviceWorker" in navigator && location.protocol !== "file:") {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("sw.js").catch(function () {});
+  });
+}
+</script>
+</body>
+</html>
