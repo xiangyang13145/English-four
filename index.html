@@ -8,8 +8,8 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="四级1500">
-<title>四级 1500 词 · 背词本</title>
+<meta name="apple-mobile-web-app-title" content="晚序词仓">
+<title>晚序词仓</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -391,21 +391,21 @@ function toast(msg) {
 
 /* ---------- 版本与公告 ---------- */
 var APP = {
-  ver: 'v4',
+  ver: 'v5',
   date: '2026-11-14',
   notice: {
-    v: 'v4',
+    v: 'v5',
     badge: '本次更新',
-    title: '发音问题已彻底修好',
+    title: '它现在叫「晚序词仓」',
     items: [
-      ['每个词读每个词',
-        '之前所有卡片都被读成同一个词（多半是 experienced）。原因是离线缓存把不同单词的音频当成了同一个文件，第一个存下来的声音顶替了全部。现在发音不走缓存，点哪个词读哪个词。'],
-      ['没英文语音也能读',
-        '手机缺少英文语音包时自动转在线发音，不再干等；连续失败会直接切换，美音不行自动换英音。'],
-      ['多了一个刷新按钮',
-        '「我的」页面新增「发音不对 / 界面没更新？」→ 点右侧「刷新」，可一键清缓存并更新到最新版。']
+      ['有了名字',
+        '桌面图标名、页面标题、安装提示都改成了「晚序词仓」。功能和进度一点没变。'],
+      ['装过的要重新添加一次',
+        '手机桌面上已有的旧图标不会自动改名。删掉旧图标，用浏览器重新打开本页 →「添加到主屏幕」，新图标就是「晚序词仓」了。'],
+      ['进度还在',
+        '学习进度存在浏览器里，跟网址绑定。删图标不会丢，重新添加后打开还是原来的进度。']
     ],
-    tip: '学习进度不会受影响：刷新、清缓存都不会丢，进度存在本机浏览器里。',
+    tip: '如果你还没添加到桌面，直接按页面提示添加，名字就已经是新名字了。',
     btn: '知道了'
   }
 };
@@ -1062,7 +1062,7 @@ function showInstallGuide() {
   } else {
     head = '电脑上这样装';
     steps = ['看地址栏右侧有没有一个「安装」小图标，点它',
-             '没有就去右上角菜单里找「安装 四级1500」',
+             '没有就去右上角菜单里找「安装 晚序词仓」',
              '装好后可以固定到任务栏，像普通软件一样打开'];
   }
   if (inWeChat()) {
@@ -1087,7 +1087,7 @@ function showInstallGuide() {
       return '<div class="gstep"><div class="gnum">' + (i + 1) + '</div><div class="gtxt">' + s + '</div></div>';
     }).join('') +
     (tip ? '<div style="margin-top:16px;padding:11px 13px;border-radius:11px;background:var(--tagbg);color:var(--tagtx);font-size:13px;line-height:1.6">' + tip + '</div>' : '') +
-    '<div style="margin-top:16px;font-size:12px;color:var(--tx3);line-height:1.6">装好后桌面图标名字是「四级1500」，全屏打开、没有地址栏，断网也能背。' +
+    '<div style="margin-top:16px;font-size:12px;color:var(--tx3);line-height:1.6">装好后桌面图标名字是「晚序词仓」，全屏打开、没有地址栏，断网也能背。' +
     '旧版里的学习进度不会自动带过来，先在旧版「导出进度」，再到新应用里「导入进度」。</div></div>';
   document.body.appendChild(ov);
 }
