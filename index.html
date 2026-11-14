@@ -363,6 +363,7 @@ function toast(msg) {
 
 /* ---------- 发音 ---------- */
 var enVoice = null, voiceTried = false, speechUnlocked = false, audioCache = {}, fallbackWarned = false;
+var curAudio = null, ttsFails = 0, ttsBroken = false;
 
 function pickVoice() {
   if (!window.speechSynthesis) return null;
@@ -403,15 +404,36 @@ document.addEventListener('touchend', unlockSpeech, { once: true, passive: true 
 document.addEventListener('click', unlockSpeech, { once: true });
 
 /* 系统语音不可用时的联网兜底 */
+function stopAudio() {
+  if (!curAudio) return;
+  try { curAudio.pause(); curAudio.currentTime = 0; } catch (e) {}
+  curAudio = null;
+}
+
 function playAudioFallback(text) {
-  try {
-    var url = 'https://dict.youdao.com/dictvoice?type=2&audio=' + encodeURIComponent(text);
-    var a = audioCache[text];
-    if (!a) { a = audioCache[text] = new Audio(url); a.preload = 'auto'; }
-    a.currentTime = 0;
-    var p = a.play();
-    if (p && p.catch) p.catch(function () { warnNoVoice(); });
-  } catch (e) { warnNoVoice(); }
+  if (!text) return;
+  stopAudio();
+  playOne(text, 2);
+}
+
+function playOne(text, type) {
+  var key = text + '#' + type;
+  var a = audioCache[key];
+  if (!a) {
+    a = audioCache[key] = new Audio();
+    a.preload = 'auto';
+    // 每个单词一条独立地址，缓存 key 也带上单词，绝不共用
+    a.src = 'https://dict.youdao.com/dictvoice?type=' + type + '&audio=' + encodeURIComponent(text);
+  }
+  curAudio = a;
+  a.onerror = function () {
+    if (type === 2) playOne(text, 1); else warnNoVoice();
+  };
+  try { a.currentTime = 0; } catch (e) {}
+  var p = a.play();
+  if (p && p.catch) p.catch(function () {
+    if (type === 2) playOne(text, 1); else warnNoVoice();
+  });
 }
 
 function warnNoVoice() {
@@ -424,27 +446,40 @@ function speak(text, manual) {
   if (!text) return;
   if (!manual && !S.cfg.speak) return;
   var synth = window.speechSynthesis;
-  if (!synth || typeof SpeechSynthesisUtterance === 'undefined') {
+  // 连续失败过的机型直接走在线发音，避免每次都要等 700ms 才响
+  if (ttsBroken || !synth || typeof SpeechSynthesisUtterance === 'undefined') {
     playAudioFallback(text);
     return;
   }
   try {
     synth.cancel();
+    stopAudio();
     var u = new SpeechSynthesisUtterance(text);
     u.lang = 'en-US';
     u.rate = 0.88;
     var v = enVoice || pickVoice();
     if (v) u.voice = v;
     var ok = false;
-    var done = function () { ok = true; };
-    u.onstart = done; u.onend = done;
-    u.onerror = function () { if (!ok) playAudioFallback(text); };
+    u.onstart = function () { ok = true; ttsFails = 0; };
+    u.onend = function () { ok = true; };
+    u.onerror = function () {
+      if (ok) return;
+      ttsFails++;
+      if (ttsFails >= 3) ttsBroken = true;
+      playAudioFallback(text);
+    };
     synth.speak(u);
-    // 部分机型没有语音包时会静默失败，800ms 内没动静就走在线发音
+    // 部分机型没有语音包时会静默失败，700ms 内没动静就走在线发音
     setTimeout(function () {
-      if (!ok && !synth.speaking && !synth.pending) playAudioFallback(text);
-    }, 800);
+      if (!ok && !synth.speaking && !synth.pending) {
+        ttsFails++;
+        if (ttsFails >= 3) ttsBroken = true;
+        playAudioFallback(text);
+      }
+    }, 700);
   } catch (e) {
+    ttsFails++;
+    if (ttsFails >= 3) ttsBroken = true;
     playAudioFallback(text);
   }
 }
@@ -1050,6 +1085,9 @@ function renderMe() {
         '<div class="setrow" onclick="testSpeak()"><div><div class="lab">发音检查</div>' +
           '<div class="sub">' + esc(voiceStatus()) + '</div></div>' +
           '<span style="color:var(--blue);font-size:13px">试听</span></div>' +
+        '<div class="setrow" onclick="hardReload()"><div><div class="lab">发音不对 / 界面没更新？</div>' +
+          '<div class="sub">点这里强制刷新到最新版本</div></div>' +
+          '<span style="color:var(--blue);font-size:13px">刷新</span></div>' +
         '<div class="setrow" onclick="exportData()"><div><div class="lab">导出进度</div>' +
           '<div class="sub"' + (bakWarn ? ' style="color:var(--amber)"' : '') + '>' + esc(bakTxt) + '</div></div>' +
           '<span style="color:var(--tx3);font-size:13px">下载</span></div>' +
@@ -1063,7 +1101,8 @@ function renderMe() {
       '<div class="card" style="padding:14px;font-size:13px;color:var(--tx2);line-height:1.7">' +
       '词表来自你提供的《四级高频核心1500词》，共 ' + total + ' 个主词（含派生词 ' +
       WORDS.reduce(function (a, w) { return a + (w.r ? w.r.length : 0); }, 0) + ' 个），分高频 / 基础 / 偶考三部分。' +
-      '进度存在本机浏览器里，换设备不会同步。</div></div>';
+      '进度存在本机浏览器里，换设备不会同步。' +
+      '<div style="margin-top:6px;color:var(--tx3);font-size:12px">版本 v3 · 2026-11-14</div></div></div>';
   document.getElementById('hTitle').textContent = '我的';
   document.getElementById('hSub').textContent = '已学 ' + learned + ' / ' + total;
 }
@@ -1091,9 +1130,31 @@ function voiceStatus() {
 
 function testSpeak() {
   unlockSpeech();
+  ttsBroken = false; ttsFails = 0;
   pickVoice();
   toast(voiceStatus());
   setTimeout(function () { speak('vocabulary', true); }, 120);
+}
+
+/* 发音/页面异常时的急救：清掉离线缓存并重新拉取最新版 */
+function hardReload() {
+  toast('正在更新，稍等…');
+  var jobs = [];
+  try {
+    if (window.caches && caches.keys) {
+      jobs.push(caches.keys().then(function (ks) {
+        return Promise.all(ks.map(function (k) { return caches.delete(k); }));
+      }));
+    }
+  } catch (e) {}
+  try {
+    if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+      jobs.push(navigator.serviceWorker.getRegistrations().then(function (rs) {
+        return Promise.all(rs.map(function (r) { return r.unregister(); }));
+      }));
+    }
+  } catch (e) {}
+  Promise.all(jobs).catch(function () {}).then(function () { location.reload(true); });
 }
 
 function exportData() {
@@ -1240,7 +1301,10 @@ updateHead();
 <script>
 if ("serviceWorker" in navigator && location.protocol !== "file:") {
   window.addEventListener("load", function () {
-    navigator.serviceWorker.register("sw.js").catch(function () {});
+    navigator.serviceWorker.register("sw.js").then(function (reg) {
+      reg.update();
+      setInterval(function () { reg.update(); }, 3600000);
+    }).catch(function () {});
   });
 }
 </script>
