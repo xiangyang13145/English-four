@@ -98,8 +98,13 @@ header{position:sticky;top:0;z-index:20;background:var(--hdr);
 .backdef{font-size:20px;font-weight:600;line-height:1.55;margin-top:8px}
 .relbox{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
 .reltitle{font-size:11px;color:var(--tx3);letter-spacing:.5px;margin-bottom:8px}
-.relrow{font-size:14px;color:var(--tx2);line-height:1.75;margin-bottom:2px}
-.relrow b{color:var(--tx);font-weight:500}
+.relrow{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--tx2);line-height:1.7;
+  margin-bottom:2px;cursor:pointer;border-radius:8px}
+.relrow:active{background:var(--tagbg)}
+.relrow b{color:var(--tx);font-weight:500;flex:none}
+.relrow .ri{font-size:12px;flex:none}
+.relrow .rd{flex:1;min-width:0}
+.relrow .rs{width:15px;height:15px;flex:none;stroke:var(--tx3);fill:none;stroke-width:1.7}
 
 .rate{display:flex;gap:8px;margin-top:14px}
 .rate button{flex:1;padding:13px 4px;border-radius:12px;border:1px solid var(--line2);
@@ -356,16 +361,92 @@ function toast(msg) {
   t._h = setTimeout(function () { t.classList.remove('on'); }, 1500);
 }
 
-function speak(text) {
-  if (!S.cfg.speak) return;
-  if (!window.speechSynthesis) return;
+/* ---------- 发音 ---------- */
+var enVoice = null, voiceTried = false, speechUnlocked = false, audioCache = {}, fallbackWarned = false;
+
+function pickVoice() {
+  if (!window.speechSynthesis) return null;
+  var vs;
+  try { vs = speechSynthesis.getVoices() || []; } catch (e) { return null; }
+  if (!vs.length) return enVoice;
+  var en = [];
+  for (var i = 0; i < vs.length; i++) {
+    var v = vs[i];
+    if (/^en([-_]|$)/i.test(v.lang || '') || /english/i.test(v.name || '')) en.push(v);
+  }
+  var us = en.filter(function (v) { return /en[-_]US/i.test(v.lang || ''); });
+  var gb = en.filter(function (v) { return /en[-_]GB/i.test(v.lang || ''); });
+  var local = en.filter(function (v) { return v.localService; });
+  var pick = us[0] || gb[0] || local[0] || en[0] || null;
+  if (pick) { enVoice = pick; voiceTried = true; }
+  return enVoice;
+}
+
+function unlockSpeech() {
+  if (speechUnlocked || !window.speechSynthesis) return;
+  speechUnlocked = true;
   try {
-    speechSynthesis.cancel();
-    var u = new SpeechSynthesisUtterance(text);
-    u.lang = 'en-US';
-    u.rate = .85;
+    var u = new SpeechSynthesisUtterance(' ');
+    u.volume = 0;
     speechSynthesis.speak(u);
   } catch (e) {}
+}
+if (window.speechSynthesis) {
+  pickVoice();
+  if (typeof speechSynthesis.addEventListener === 'function') {
+    speechSynthesis.addEventListener('voiceschanged', pickVoice);
+  } else {
+    speechSynthesis.onvoiceschanged = pickVoice;
+  }
+}
+document.addEventListener('touchend', unlockSpeech, { once: true, passive: true });
+document.addEventListener('click', unlockSpeech, { once: true });
+
+/* 系统语音不可用时的联网兜底 */
+function playAudioFallback(text) {
+  try {
+    var url = 'https://dict.youdao.com/dictvoice?type=2&audio=' + encodeURIComponent(text);
+    var a = audioCache[text];
+    if (!a) { a = audioCache[text] = new Audio(url); a.preload = 'auto'; }
+    a.currentTime = 0;
+    var p = a.play();
+    if (p && p.catch) p.catch(function () { warnNoVoice(); });
+  } catch (e) { warnNoVoice(); }
+}
+
+function warnNoVoice() {
+  if (fallbackWarned) return;
+  fallbackWarned = true;
+  toast('这台设备没装英文语音，也连不上网络发音');
+}
+
+function speak(text, manual) {
+  if (!text) return;
+  if (!manual && !S.cfg.speak) return;
+  var synth = window.speechSynthesis;
+  if (!synth || typeof SpeechSynthesisUtterance === 'undefined') {
+    playAudioFallback(text);
+    return;
+  }
+  try {
+    synth.cancel();
+    var u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
+    u.rate = 0.88;
+    var v = enVoice || pickVoice();
+    if (v) u.voice = v;
+    var ok = false;
+    var done = function () { ok = true; };
+    u.onstart = done; u.onend = done;
+    u.onerror = function () { if (!ok) playAudioFallback(text); };
+    synth.speak(u);
+    // 部分机型没有语音包时会静默失败，800ms 内没动静就走在线发音
+    setTimeout(function () {
+      if (!ok && !synth.speaking && !synth.pending) playAudioFallback(text);
+    }, 800);
+  } catch (e) {
+    playAudioFallback(text);
+  }
 }
 
 /* ---------- 队列 ---------- */
@@ -415,12 +496,7 @@ function renderStudy() {
   }
   var w = WORDS[queue[0] - 1];
   cur = w; flipped = false;
-  var rel = '';
-  if (w.r && w.r.length) {
-    rel = '<div class="relbox"><div class="reltitle">派生 / 同族</div>' + w.r.map(function (x) {
-      return '<div class="relrow"><b>' + esc(x[0]) + '</b> <span style="font-size:12px">/' + esc(x[1]) + '/</span> ' + esc(x[2]) + '</div>';
-    }).join('') + '</div>';
-  }
+  var rel = relHTML(w);
   var startPct = roundTotal ? Math.round(answered / roundTotal * 100) : 0;
   el.innerHTML =
     '<div class="bar" style="margin-bottom:12px"><i id="sbar" style="width:' + startPct + '%"></i></div>' +
@@ -430,7 +506,7 @@ function renderStudy() {
         '<div class="fcenter">' +
           '<div class="bigword">' + esc(w.w) + '</div>' +
           '<div class="ipa">/' + esc(w.p) + '/</div>' +
-          '<div class="spk" onclick="event.stopPropagation();speak(\'' + esc(w.w).replace(/'/g, "\\'") + '\')">' +
+          '<div class="spk" onclick="event.stopPropagation();speak(\'' + esc(w.w).replace(/'/g, "\\'") + '\',true)">' +
             '<svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>' +
           '</div>' +
           '<div class="hint">点一下翻面</div>' +
@@ -439,7 +515,7 @@ function renderStudy() {
       '<div class="face back">' +
         '<div class="fmeta"><span>' + w.s + ' · List ' + w.l + '</span><span class="ftag">已翻面</span></div>' +
         '<div class="binner">' +
-          '<div class="backword">' + esc(w.w) + ' <span style="font-size:12px">/' + esc(w.p) + '/</span></div>' +
+          '<div class="backword" onclick="event.stopPropagation();speak(\'' + esc(w.w).replace(/'/g, "\\'") + '\',true)">' + esc(w.w) + ' <span style="font-size:12px">/' + esc(w.p) + '/</span></div>' +
           '<div class="backdef">' + esc(w.d) + '</div>' + rel +
         '</div>' +
       '</div>' +
@@ -730,13 +806,24 @@ function renderLib() {
   document.getElementById('hSub').textContent = arr.length + ' 个词';
 }
 
+function relHTML(w) {
+  if (!w.r || !w.r.length) return '';
+  return '<div class="relbox"><div class="reltitle">派生 / 同族 · 点一下听发音</div>' +
+    w.r.map(function (x) {
+      var q = esc(x[0]).replace(/'/g, "\\'");
+      return '<div class="relrow" onclick="event.stopPropagation();speak(\'' + q + '\',true)">' +
+        '<b>' + esc(x[0]) + '</b>' +
+        '<span class="ri">/' + esc(x[1]) + '/</span>' +
+        '<span class="rd">' + esc(x[2]) + '</span>' +
+        '<svg class="rs" viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>' +
+        '</div>';
+    }).join('') + '</div>';
+}
+
 function showWord(id) {
   var w = WORDS[id - 1];
   var s = S.w[id];
-  var rel = (w.r && w.r.length) ? '<div class="relbox"><div class="reltitle">派生 / 同族</div>' +
-    w.r.map(function (x) {
-      return '<div class="relrow"><b>' + esc(x[0]) + '</b> <span style="font-size:12px">/' + esc(x[1]) + '/</span> ' + esc(x[2]) + '</div>';
-    }).join('') + '</div>' : '';
+  var rel = relHTML(w);
   var st = s ? ('复习 ' + s.n + ' 次 · 答对 ' + s.ok + ' · 答错 ' + s.bad) : '还没学过';
   var boxl = s ? ('当前阶段 ' + s.b + ' / 6') : '';
   var ov = document.createElement('div');
@@ -746,7 +833,7 @@ function showWord(id) {
     '<div style="display:flex;align-items:center;justify-content:space-between">' +
       '<div><div style="font-size:26px;font-weight:600">' + esc(w.w) + '</div>' +
       '<div style="font-size:14px;color:var(--tx2);margin-top:4px">/' + esc(w.p) + '/</div></div>' +
-      '<button onclick="speak(\'' + esc(w.w).replace(/'/g, "\\'") + '\')" style="width:42px;height:42px;border-radius:50%;border:1px solid var(--line2)">' +
+      '<button onclick="speak(\'' + esc(w.w).replace(/'/g, "\\'") + '\',true)" style="width:42px;height:42px;border-radius:50%;border:1px solid var(--line2)">' +
       '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b6a66" stroke-width="1.7"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg></button>' +
     '</div>' +
     '<div style="font-size:17px;font-weight:600;margin-top:16px;line-height:1.55">' + esc(w.d) + '</div>' + rel +
@@ -960,6 +1047,9 @@ function renderMe() {
           }).join('') + '</div></div>' +
         '<div class="setrow"><div><div class="lab">自动朗读</div><div class="sub">翻开新卡片时读一遍</div></div>' +
           '<div class="sw ' + (S.cfg.speak ? 'on' : '') + '" onclick="toggleSpeak(this)"><i></i></div></div>' +
+        '<div class="setrow" onclick="testSpeak()"><div><div class="lab">发音检查</div>' +
+          '<div class="sub">' + esc(voiceStatus()) + '</div></div>' +
+          '<span style="color:var(--blue);font-size:13px">试听</span></div>' +
         '<div class="setrow" onclick="exportData()"><div><div class="lab">导出进度</div>' +
           '<div class="sub"' + (bakWarn ? ' style="color:var(--amber)"' : '') + '>' + esc(bakTxt) + '</div></div>' +
           '<span style="color:var(--tx3);font-size:13px">下载</span></div>' +
@@ -986,7 +1076,24 @@ function setDaily(v) {
 function toggleSpeak(el) {
   S.cfg.speak = !S.cfg.speak; save();
   el.classList.toggle('on', S.cfg.speak);
-  if (S.cfg.speak) speak('hello');
+  if (S.cfg.speak) speak('hello', true);
+}
+
+function voiceStatus() {
+  if (!window.speechSynthesis) return '浏览器不支持，改用在线发音';
+  var vs = [];
+  try { vs = speechSynthesis.getVoices() || []; } catch (e) {}
+  if (!vs.length) return '系统语音还没加载，点一下试听';
+  var en = vs.filter(function (v) { return /^en([-_]|$)/i.test(v.lang || ''); });
+  if (!en.length) return '没装英文语音，会走在线发音';
+  return '已就绪：' + en.length + ' 个英文语音';
+}
+
+function testSpeak() {
+  unlockSpeech();
+  pickVoice();
+  toast(voiceStatus());
+  setTimeout(function () { speak('vocabulary', true); }, 120);
 }
 
 function exportData() {
@@ -1116,7 +1223,7 @@ document.addEventListener('keydown', function (e) {
   if (e.target.tagName === 'INPUT') return;
   if (e.code === 'Space') { e.preventDefault(); flipCard(); }
   if (flipped && (e.key === '1' || e.key === '2' || e.key === '3')) rate(parseInt(e.key, 10) - 1);
-  if (e.key === 's') speak(cur.w);
+  if (e.key === 's') speak(cur.w, true);
 });
 
 if (window.matchMedia) {
