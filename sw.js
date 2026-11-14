@@ -1,4 +1,4 @@
-const CACHE = 'cet4-1500-v5';
+const CACHE = 'cet4-1500-v6';
 const ASSETS = ['./', './index.html', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './icon-maskable-512.png', './icon-180.png'];
 
@@ -20,7 +20,8 @@ self.addEventListener('fetch', e => {
   // 不同单词的音频地址只差查询参数，一旦缓存就会互相顶替，导致所有词读成同一个。
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
-  if (url.pathname.endsWith('/sw.js')) return;
+  // 应用清单与 SW 自身不进缓存，保证改名 / 更新能立刻被浏览器读到
+  if (url.pathname.endsWith('/sw.js') || url.pathname.endsWith('/manifest.webmanifest')) return;
 
   if (req.mode === 'navigate') {
     // 页面走网络优先，保证更新能立刻看到；断网时回落缓存
