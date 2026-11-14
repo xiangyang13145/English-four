@@ -37,6 +37,9 @@ html[data-theme="dark"]{
   --midbd:#4a3a1a; --midtx:#d9a53c;
   --toastbg:#f0efec; --toasttx:#151517;
 }
+html[data-theme="dark"] .instcard{background:linear-gradient(135deg,#1c2537,#1a1f2a);border-color:#2b3752}
+html[data-theme="dark"] .instbtn.ghost{border-color:#3a4a6e}
+html[data-theme="dark"] .instico.ok{background:#1c3a2d}
 html,body{margin:0;padding:0;background:var(--bg);color:var(--tx);
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
   -webkit-font-smoothing:antialiased;font-size:15px;line-height:1.5}
@@ -48,6 +51,9 @@ input{font-family:inherit}
 header{position:sticky;top:0;z-index:20;background:var(--hdr);
   backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:10px 0 9px}
 .hrow{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.insticon{width:38px;height:38px;flex:none;border-radius:50%;border:1px solid var(--line2);
+  background:var(--card);display:none;align-items:center;justify-content:center;margin-left:auto;margin-right:2px}
+.insticon.show{display:flex}
 .htitle{font-size:15px;font-weight:600;letter-spacing:.3px}
 .hsub{font-size:12px;color:var(--tx3);margin-top:1px}
 .hprog{width:64px;height:64px;position:relative;flex:none}
@@ -189,6 +195,22 @@ nav button.on{color:var(--tx)}
 .forecast .cbar{width:100%;max-width:26px;background:var(--blue);border-radius:4px;min-height:3px;opacity:.85}
 .forecast .cbar.zero{background:var(--track)}
 .forecast .clab{font-size:11px;color:var(--tx3)}
+.instcard{display:flex;align-items:center;gap:13px;padding:15px;border-radius:var(--r);
+  background:linear-gradient(135deg,#e9efff,#f3f7ff);border:1px solid #d9e3fb}
+.instcard.done{background:var(--card);border-color:var(--line)}
+.instico{width:42px;height:42px;flex:none;border-radius:12px;background:var(--blue);
+  display:flex;align-items:center;justify-content:center}
+.instico.ok{background:#e4f6ee}
+.instbody{flex:1;min-width:0}
+.instt{font-size:14px;font-weight:600}
+.insts{font-size:12px;color:var(--tx3);margin-top:3px;line-height:1.5}
+.instbtn{flex:none;border:0;background:var(--blue);color:#fff;font-size:13px;font-weight:500;
+  padding:10px 14px;border-radius:11px;white-space:nowrap}
+.instbtn.ghost{background:transparent;color:var(--blue);border:1px solid #c8d5f6}
+.gstep{display:flex;gap:11px;margin-top:14px}
+.gnum{width:22px;height:22px;flex:none;border-radius:50%;background:var(--blue);color:#fff;
+  font-size:12px;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.gtxt{font-size:14px;line-height:1.6}
 </style>
 </head>
 <body>
@@ -199,6 +221,11 @@ nav button.on{color:var(--tx)}
       <div class="htitle" id="hTitle">背词</div>
       <div class="hsub" id="hSub">今日 0 / 60</div>
     </div>
+    <button class="insticon" id="installIcon" onclick="tryInstall()" aria-label="装到桌面">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3v11"/><path d="M7.5 10 12 14.5 16.5 10"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
+      </svg>
+    </button>
     <div class="hprog">
       <svg width="64" height="64">
         <circle cx="32" cy="32" r="27" stroke="#eceae5" stroke-width="5" fill="none"/>
@@ -729,6 +756,140 @@ function showWord(id) {
   speak(w.w);
 }
 
+/* ---------- 装到桌面 ---------- */
+var installEvt = null;
+var ONLINE_URL = 'https://xiangyang13145.github.io/English-four/';
+
+function isStandalone() {
+  try {
+    if (window.matchMedia('(display-mode: standalone)').matches) return true;
+    if (window.matchMedia('(display-mode: fullscreen)').matches) return true;
+  } catch (e) {}
+  return navigator.standalone === true;
+}
+function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+function isAndroid() { return /Android/i.test(navigator.userAgent); }
+function inWeChat() { return /MicroMessenger/i.test(navigator.userAgent); }
+function isLocalFile() { return location.protocol === 'file:'; }
+
+window.addEventListener('beforeinstallprompt', function (e) {
+  e.preventDefault();
+  installEvt = e;
+  if (view === 'me') renderMe();
+});
+window.addEventListener('appinstalled', function () {
+  installEvt = null;
+  syncInstallIcon();
+  toast('已装到桌面，断网也能背');
+  if (view === 'me') renderMe();
+});
+
+function syncInstallIcon() {
+  var b = document.getElementById('installIcon');
+  if (!b) return;
+  b.className = 'insticon' + (isStandalone() ? '' : ' show');
+}
+
+function instCardHTML() {
+  if (isStandalone()) {
+    return '<div class="instcard done">' +
+      '<div class="instico ok"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#12946a" stroke-width="2.4"><path d="M4 12.5 9.5 18 20 7"/></svg></div>' +
+      '<div class="instbody"><div class="instt">已装到桌面</div>' +
+      '<div class="insts">现在打开就是全屏 App 的样子，断网也能背</div></div></div>';
+  }
+  if (isLocalFile()) {
+    return '<div class="instcard">' +
+      '<div class="instico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9"><rect x="7" y="2" width="10" height="20" rx="2.4"/><path d="M11 18.5h2"/></svg></div>' +
+      '<div class="instbody"><div class="instt">这是本地文件版</div>' +
+      '<div class="insts">手机系统只允许把网页版装到桌面。点右边复制在线地址，用浏览器打开就能装</div></div>' +
+      '<button class="instbtn" onclick="copyOnline()">复制地址</button></div>';
+  }
+  if (inWeChat()) {
+    return '<div class="instcard">' +
+      '<div class="instico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></div>' +
+      '<div class="instbody"><div class="instt">现在在微信里，装不了</div>' +
+      '<div class="insts">微信内置浏览器没有安装入口。点右上角「···」→「在浏览器打开」，再回来点安装</div></div>' +
+      '<button class="instbtn" onclick="showInstallGuide()">看步骤</button></div>';
+  }
+  var label = installEvt ? '一键安装' : (isIOS() ? '添加到主屏' : '怎么装');
+  return '<div class="instcard">' +
+    '<div class="instico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9"><rect x="7" y="2" width="10" height="20" rx="2.4"/><path d="M11 18.5h2"/></svg></div>' +
+    '<div class="instbody"><div class="instt">装到手机桌面</div>' +
+    '<div class="insts">' + (installEvt ? '点一下，系统会弹安装确认' : '三步搞定，装好全屏无地址栏') + '</div></div>' +
+    '<button class="instbtn" onclick="tryInstall()">' + label + '</button></div>';
+}
+
+function tryInstall() {
+  if (isStandalone()) { toast('已经装好了，现在就在 App 里'); return; }
+  if (installEvt) {
+    installEvt.prompt();
+    installEvt.userChoice.then(function (r) {
+      if (r && r.outcome === 'accepted') toast('正在安装…');
+      installEvt = null;
+      if (view === 'me') renderMe();
+    });
+    return;
+  }
+  showInstallGuide();
+}
+
+function copyOnline() {
+  var done = function () { toast('地址已复制，粘贴到浏览器打开'); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(ONLINE_URL).then(done, function () { prompt('复制这个地址，在浏览器里打开：', ONLINE_URL); });
+  } else {
+    prompt('复制这个地址，在浏览器里打开：', ONLINE_URL);
+  }
+}
+
+function showInstallGuide() {
+  var head, steps, tip = '';
+  if (isIOS()) {
+    head = 'iPhone / iPad 这样装';
+    steps = ['点屏幕底部中间的「分享」按钮（方框里一个向上箭头）',
+             '在弹出菜单里往下滑，选「添加到主屏幕」',
+             '右上角点「添加」，桌面就出现蓝底的「词」图标'];
+  } else if (isAndroid()) {
+    head = '安卓这样装';
+    steps = ['点浏览器右上角的「⋮」三个点',
+             '选「安装应用」或「添加到主屏幕」',
+             '点「安装」/「添加」，桌面就出现蓝底的「词」图标'];
+  } else {
+    head = '电脑上这样装';
+    steps = ['看地址栏右侧有没有一个「安装」小图标，点它',
+             '没有就去右上角菜单里找「安装 四级1500」',
+             '装好后可以固定到任务栏，像普通软件一样打开'];
+  }
+  if (inWeChat()) {
+    tip = '你现在是在微信里打开的，微信没有安装入口。先点右上角「···」，选「在浏览器打开」，再照上面做。';
+  } else if (isLocalFile()) {
+    tip = '本地文件（file://）不能安装。先复制在线地址：' + ONLINE_URL;
+  } else if (!('serviceWorker' in navigator)) {
+    tip = '换个浏览器试试：安卓用 Chrome / Edge，iPhone 用 Safari。';
+  }
+
+  var ov = document.createElement('div');
+  ov.id = 'instGuide';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.36);z-index:70;display:flex;align-items:flex-end';
+  ov.onclick = function (e) { if (e.target === ov) document.body.removeChild(ov); };
+  ov.innerHTML = '<div style="background:var(--card);color:var(--tx);width:100%;max-width:560px;margin:0 auto;' +
+    'border-radius:18px 18px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom))">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center">' +
+      '<div style="font-size:17px;font-weight:600">' + head + '</div>' +
+      '<button onclick="var g=document.getElementById(\'instGuide\');if(g)g.remove()" style="width:34px;height:34px;border-radius:50%;' +
+      'border:1px solid var(--line2);background:transparent;color:var(--tx2);font-size:16px">×</button></div>' +
+    steps.map(function (s, i) {
+      return '<div class="gstep"><div class="gnum">' + (i + 1) + '</div><div class="gtxt">' + s + '</div></div>';
+    }).join('') +
+    (tip ? '<div style="margin-top:16px;padding:11px 13px;border-radius:11px;background:var(--tagbg);color:var(--tagtx);font-size:13px;line-height:1.6">' + tip + '</div>' : '') +
+    '<div style="margin-top:16px;font-size:12px;color:var(--tx3);line-height:1.6">装好后桌面图标名字是「四级1500」，全屏打开、没有地址栏，断网也能背。' +
+    '旧版里的学习进度不会自动带过来，先在旧版「导出进度」，再到新应用里「导入进度」。</div></div>';
+  document.body.appendChild(ov);
+}
+
 /* ---------- 我的 ---------- */
 function renderMe() {
   var learned = 0, mastered = 0, total = WORDS.length;
@@ -778,6 +939,7 @@ function renderMe() {
   }).join('') + '</div>';
 
   document.getElementById('meBody').innerHTML =
+    '<div style="margin-top:14px">' + instCardHTML() + '</div>' +
     '<div class="stat">' +
       '<div class="box"><div class="lb">已学</div><div class="num">' + learned + '<small> / ' + total + '</small></div></div>' +
       '<div class="box"><div class="lb">已掌握</div><div class="num">' + mastered + '<small> 个</small></div></div>' +
@@ -964,6 +1126,7 @@ if (window.matchMedia) {
 }
 
 applyTheme();
+syncInstallIcon();
 startSession();
 updateHead();
 </script>
