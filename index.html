@@ -4,11 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f7f6f3">
-<link rel="manifest" href="manifest.webmanifest">
+<link rel="manifest" href="manifest.webmanifest?v=6">
 <link rel="apple-touch-icon" href="icon-180.png">
+<meta name="application-name" content="晚序词仓">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="晚序词仓">
+<meta property="og:site_name" content="晚序词仓">
+<meta property="og:title" content="晚序词仓">
 <title>晚序词仓</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -391,23 +394,10 @@ function toast(msg) {
 
 /* ---------- 版本与公告 ---------- */
 var APP = {
-  ver: 'v5',
+  ver: 'v6',
   date: '2026-11-14',
-  notice: {
-    v: 'v5',
-    badge: '本次更新',
-    title: '它现在叫「晚序词仓」',
-    items: [
-      ['有了名字',
-        '桌面图标名、页面标题、安装提示都改成了「晚序词仓」。功能和进度一点没变。'],
-      ['装过的要重新添加一次',
-        '手机桌面上已有的旧图标不会自动改名。删掉旧图标，用浏览器重新打开本页 →「添加到主屏幕」，新图标就是「晚序词仓」了。'],
-      ['进度还在',
-        '学习进度存在浏览器里，跟网址绑定。删图标不会丢，重新添加后打开还是原来的进度。']
-    ],
-    tip: '如果你还没添加到桌面，直接按页面提示添加，名字就已经是新名字了。',
-    btn: '知道了'
-  }
+  // 公告：默认关闭。只有明确要求时才填内容并发布，不要自作主张弹窗。
+  notice: null
 };
 
 function noticeKey(v) { return 'cet4_notice_' + v; }
@@ -1168,9 +1158,9 @@ function renderMe() {
         '<div class="setrow" onclick="hardReload()"><div><div class="lab">发音不对 / 界面没更新？</div>' +
           '<div class="sub">点这里强制刷新到最新版本</div></div>' +
           '<span style="color:var(--blue);font-size:13px">刷新</span></div>' +
-        '<div class="setrow" onclick="showNotice(true)"><div><div class="lab">更新说明</div>' +
+        (APP.notice ? '<div class="setrow" onclick="showNotice(true)"><div><div class="lab">更新说明</div>' +
           '<div class="sub">当前版本 ' + esc(APP.ver) + '</div></div>' +
-          '<span style="color:var(--tx3);font-size:13px">查看</span></div>' +
+          '<span style="color:var(--tx3);font-size:13px">查看</span></div>' : '') +
         '<div class="setrow" onclick="exportData()"><div><div class="lab">导出进度</div>' +
           '<div class="sub"' + (bakWarn ? ' style="color:var(--amber)"' : '') + '>' + esc(bakTxt) + '</div></div>' +
           '<span style="color:var(--tx3);font-size:13px">下载</span></div>' +
