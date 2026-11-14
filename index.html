@@ -175,6 +175,30 @@ nav button.on{color:var(--tx)}
   transition:.25s;z-index:50;white-space:nowrap}
 .toast.on{opacity:.94;transform:translate(-50%,0)}
 
+/* 版本公告（全屏） */
+.notice{position:fixed;inset:0;z-index:70;display:none;background:rgba(18,18,20,.55);
+  padding:22px 18px;overflow-y:auto;overscroll-behavior:contain;
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+html[data-theme="dark"] .notice{background:rgba(0,0,0,.66)}
+.notice.on{display:flex;align-items:center;justify-content:center;animation:fade .2s ease both}
+.ncard{width:100%;max-width:420px;background:var(--card);border-radius:20px;
+  padding:24px 22px 18px;box-shadow:0 20px 56px rgba(0,0,0,.3);
+  max-height:calc(100vh - 60px);overflow-y:auto;animation:pop .3s cubic-bezier(.2,.9,.3,1) both}
+@keyframes pop{from{opacity:0;transform:translateY(16px) scale(.96)}to{opacity:1;transform:none}}
+.nbadge{display:inline-block;font-size:12px;font-weight:600;color:var(--tagtx);
+  background:var(--tagbg);padding:3px 10px;border-radius:20px}
+.ntitle{font-size:20px;font-weight:600;margin:12px 0 3px;letter-spacing:.2px;line-height:1.35}
+.nver{font-size:12px;color:var(--tx3);margin-bottom:16px}
+.nitem{display:flex;gap:9px;margin-bottom:13px}
+.nitem i{flex:none;width:6px;height:6px;border-radius:50%;background:var(--blue);margin-top:8px}
+.nitem div{font-size:14px;color:var(--tx2);line-height:1.7}
+.nitem b{display:block;color:var(--tx);font-weight:600;font-size:14px;margin-bottom:1px}
+.ntip{margin-top:6px;padding:11px 13px;border-radius:11px;background:var(--okbg);
+  border:1px solid var(--okbd);color:var(--oktx);font-size:13px;line-height:1.65}
+.nbtn{width:100%;margin-top:18px;padding:14px;border-radius:13px;background:var(--blue);
+  color:#fff;font-weight:600;font-size:15px}
+.nbtn:active{opacity:.85}
+
 .quizq{text-align:center;padding:26px 10px 18px}
 .quizq .q{font-size:28px;font-weight:600;word-break:break-word}
 .quizq .qi{font-size:14px;color:var(--tx2);margin-top:6px}
@@ -287,6 +311,10 @@ nav button.on{color:var(--tx)}
 </nav>
 
 <div class="toast" id="toast"></div>
+
+<div class="notice" id="notice" onclick="if(event.target===this)closeNotice()">
+  <div class="ncard" id="noticeCard"></div>
+</div>
 <input type="file" id="impFile" accept=".json,application/json" style="display:none" onchange="onImpFile(this)">
 
 <script>
@@ -359,6 +387,58 @@ function toast(msg) {
   t.classList.add('on');
   clearTimeout(t._h);
   t._h = setTimeout(function () { t.classList.remove('on'); }, 1500);
+}
+
+/* ---------- 版本与公告 ---------- */
+var APP = {
+  ver: 'v4',
+  date: '2026-11-14',
+  notice: {
+    v: 'v4',
+    badge: '本次更新',
+    title: '发音问题已彻底修好',
+    items: [
+      ['每个词读每个词',
+        '之前所有卡片都被读成同一个词（多半是 experienced）。原因是离线缓存把不同单词的音频当成了同一个文件，第一个存下来的声音顶替了全部。现在发音不走缓存，点哪个词读哪个词。'],
+      ['没英文语音也能读',
+        '手机缺少英文语音包时自动转在线发音，不再干等；连续失败会直接切换，美音不行自动换英音。'],
+      ['多了一个刷新按钮',
+        '「我的」页面新增「发音不对 / 界面没更新？」→ 点右侧「刷新」，可一键清缓存并更新到最新版。']
+    ],
+    tip: '学习进度不会受影响：刷新、清缓存都不会丢，进度存在本机浏览器里。',
+    btn: '知道了'
+  }
+};
+
+function noticeKey(v) { return 'cet4_notice_' + v; }
+
+function renderNotice() {
+  var n = APP.notice;
+  if (!n) return;
+  var html = '<div class="nbadge">' + esc(n.badge) + '</div>' +
+    '<div class="ntitle">' + esc(n.title) + '</div>' +
+    '<div class="nver">版本 ' + esc(APP.ver) + ' · ' + esc(APP.date) + '</div>';
+  for (var i = 0; i < n.items.length; i++) {
+    html += '<div class="nitem"><i></i><div><b>' + esc(n.items[i][0]) + '</b>' +
+      esc(n.items[i][1]) + '</div></div>';
+  }
+  html += '<div class="ntip">' + esc(n.tip) + '</div>' +
+    '<button class="nbtn" onclick="closeNotice()">' + esc(n.btn) + '</button>';
+  document.getElementById('noticeCard').innerHTML = html;
+}
+
+function showNotice(force) {
+  if (!APP.notice) return;
+  if (!force && localStorage.getItem(noticeKey(APP.notice.v)) === '1') return;
+  renderNotice();
+  document.getElementById('notice').classList.add('on');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeNotice() {
+  localStorage.setItem(noticeKey(APP.notice.v), '1');
+  document.getElementById('notice').classList.remove('on');
+  document.body.style.overflow = '';
 }
 
 /* ---------- 发音 ---------- */
@@ -1088,6 +1168,9 @@ function renderMe() {
         '<div class="setrow" onclick="hardReload()"><div><div class="lab">发音不对 / 界面没更新？</div>' +
           '<div class="sub">点这里强制刷新到最新版本</div></div>' +
           '<span style="color:var(--blue);font-size:13px">刷新</span></div>' +
+        '<div class="setrow" onclick="showNotice(true)"><div><div class="lab">更新说明</div>' +
+          '<div class="sub">当前版本 ' + esc(APP.ver) + '</div></div>' +
+          '<span style="color:var(--tx3);font-size:13px">查看</span></div>' +
         '<div class="setrow" onclick="exportData()"><div><div class="lab">导出进度</div>' +
           '<div class="sub"' + (bakWarn ? ' style="color:var(--amber)"' : '') + '>' + esc(bakTxt) + '</div></div>' +
           '<span style="color:var(--tx3);font-size:13px">下载</span></div>' +
@@ -1102,7 +1185,8 @@ function renderMe() {
       '词表来自你提供的《四级高频核心1500词》，共 ' + total + ' 个主词（含派生词 ' +
       WORDS.reduce(function (a, w) { return a + (w.r ? w.r.length : 0); }, 0) + ' 个），分高频 / 基础 / 偶考三部分。' +
       '进度存在本机浏览器里，换设备不会同步。' +
-      '<div style="margin-top:6px;color:var(--tx3);font-size:12px">版本 v3 · 2026-11-14</div></div></div>';
+      '<div style="margin-top:6px;color:var(--tx3);font-size:12px">版本 ' +
+      esc(APP.ver) + ' · ' + esc(APP.date) + '</div></div></div>';
   document.getElementById('hTitle').textContent = '我的';
   document.getElementById('hSub').textContent = '已学 ' + learned + ' / ' + total;
 }
@@ -1297,6 +1381,7 @@ applyTheme();
 syncInstallIcon();
 startSession();
 updateHead();
+setTimeout(function () { showNotice(false); }, 260);
 </script>
 <script>
 if ("serviceWorker" in navigator && location.protocol !== "file:") {
