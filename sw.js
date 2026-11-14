@@ -1,4 +1,4 @@
-const CACHE = 'cet4-1500-v4';
+const CACHE = 'cet4-1500-v5';
 const ASSETS = ['./', './index.html', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './icon-maskable-512.png', './icon-180.png'];
 
